@@ -141,9 +141,7 @@
   <!-- Article view, pushed over the list -->
   <div id="article-view" class="fixed inset-0 bg-zinc-50 dark:bg-zinc-950 flex-col" style="display:none;z-index:200">
     <div class="un-navbar un-safe-top flex items-center gap-2 px-2">
-      <button id="article-back" class="un-navbar-back un-touch-target w-11 h-11 flex items-center justify-center" aria-label="Back">
-        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-      </button>
+      <button id="article-back" class="un-navbar-back un-touch-target" aria-label="Back"></button>
       <div class="un-navbar-title text-base font-semibold truncate"></div>
       <a id="article-open-link" href="#" target="_blank" rel="noopener"
          class="ml-auto shrink-0 inline-flex items-center gap-1.5 text-[13px] font-medium px-3 py-1.5 rounded-full bg-violet-600/10 text-violet-700 dark:bg-violet-600/20 dark:text-violet-300">
@@ -180,33 +178,28 @@
           <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
         </button>
       </div>
-      <div id="filter-seg" class="flex mx-3 mt-2 mb-2.5 rounded-xl bg-zinc-200/70 dark:bg-zinc-900 p-0.5 gap-0.5 text-sm font-medium">
-        <button id="seg-unread" class="seg-active flex-1 py-1.5 rounded-[10px] text-center">Unread</button>
-        <button id="seg-all" class="seg-inactive flex-1 py-1.5 rounded-[10px] text-center">All</button>
-      </div>
+      <div id="filter-hint" class="px-4 pb-2 pt-1 text-xs text-zinc-500 truncate"></div>
     </div>
 
-    <div id="list-scroll" class="flex-1 overflow-y-auto overscroll-contain pt-[112px]">
+    <div id="list-scroll" class="flex-1 overflow-y-auto overscroll-contain pt-[64px]">
       <div id="empty-state" class="hidden flex-col items-center justify-center text-center px-8 pt-24 gap-3">
         <svg class="w-12 h-12 text-zinc-300 dark:text-zinc-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
         <p id="empty-title" class="text-zinc-600 dark:text-zinc-300 font-medium">You're all caught up</p>
         <p id="empty-hint" class="text-sm text-zinc-500">Tap + to add a feed, then new items show up here.</p>
       </div>
       <div id="item-list" class="un-group mx-3 mb-3 overflow-hidden"></div>
+      <button id="show-past-btn" class="hidden mx-3 mb-3 py-2.5 rounded-xl bg-zinc-200/70 dark:bg-zinc-900 text-sm font-medium text-zinc-700 dark:text-zinc-300 active:scale-[0.98]">
+        Show past articles
+      </button>
     </div>
   </main>
 
   <!-- Feeds screen, pushed over the list -->
   <div id="feeds-view" class="fixed inset-0 bg-zinc-50 dark:bg-zinc-950 flex-col" style="display:none;z-index:200">
     <div class="un-navbar un-safe-top flex items-center gap-2 px-2">
-      <button id="feeds-back" class="un-navbar-back un-touch-target w-11 h-11 flex items-center justify-center" aria-label="Back">
-        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-      </button>
+      <button id="feeds-back" class="un-navbar-back un-touch-target" aria-label="Back"></button>
       <div class="un-navbar-title text-base font-semibold">Your feeds</div>
-      <button id="theme-btn" class="un-touch-target w-11 h-11 flex items-center justify-center text-zinc-500 dark:text-zinc-400" aria-label="Toggle light or dark mode">
-        <svg id="theme-icon-sun" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M6.34 17.66l-1.41 1.41"/><path d="M19.07 4.93l-1.41 1.41"/></svg>
-        <svg id="theme-icon-moon" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-      </button>
+      <span class="w-11 shrink-0" aria-hidden="true"></span>
       <button id="feeds-refresh-all" class="un-touch-target w-11 h-11 flex items-center justify-center text-violet-600 dark:text-violet-400" aria-label="Refresh all feeds">
         <svg id="feeds-refresh-icon" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
       </button>
@@ -258,6 +251,7 @@
     let items = [];
     let unreadTotal = 0;
     let filter = localStorage.getItem('rss-filter') === 'all' ? 'all' : 'unread';
+    let showPast = filter === 'all';
     let openItemId = null;
     let swipeHandles = [];
 
@@ -284,10 +278,11 @@
     }
 
     function setFilter(next) {
+      // One flat stream: unread items on top, read items below the divider
+      // once "Show past articles" is tapped (or shown automatically after
+      // reading in place). `filter` is 'unread' or 'all'.
       filter = next;
       try { localStorage.setItem('rss-filter', next); } catch (_) {}
-      $('seg-unread').className = (filter === 'unread' ? 'seg-active' : 'seg-inactive') + ' flex-1 py-1.5 rounded-[10px] text-center';
-      $('seg-all').className = (filter === 'all' ? 'seg-active' : 'seg-inactive') + ' flex-1 py-1.5 rounded-[10px] text-center';
       $('list-title').textContent = filter === 'unread' ? 'Unread' : 'All';
       renderList();
     }
@@ -300,15 +295,24 @@
     function renderList() {
       const listEl = $('item-list');
       detachSwipes();
-      if (filter === 'unread') items = items.filter(function (it) { return !it.read; });
-      const shown = items;
-      const isEmpty = !shown.length;
+      const unread = items.filter(function (it) { return !it.read; });
+      const read = items.filter(function (it) { return it.read; });
+      // In the All view everything is one list; in Unread the read items only
+      // appear when the divider is shown.
+      const pastShown = filter === 'all' || showPast;
+      const shown = pastShown ? items : unread;
+      const caughtUp = filter === 'unread' && !showPast && unread.length === 0 && read.length > 0;
+      const isEmpty = !shown.length && !caughtUp;
+      $('filter-hint').textContent = filter === 'all'
+        ? 'All articles, newest first'
+        : (read.length ? unread.length + ' unread · ' + read.length + ' already read' : 'Nothing new right now');
+      $('show-past-btn').classList.toggle('hidden', pastShown || !read.length);
       $('empty-state').className = isEmpty ? 'flex flex-col items-center justify-center text-center px-8 pt-24 gap-3' : 'hidden';
       if (isEmpty) {
-        $('empty-title').textContent = filter === 'all' ? 'No items yet' : "You're all caught up";
-        $('empty-hint').textContent = filter === 'all'
-          ? 'Add a feed and its items will appear here.'
-          : 'New items land here. Check All to reread something.';
+        $('empty-title').textContent = caughtUp ? "You're all caught up" : 'No items yet';
+        $('empty-hint').textContent = caughtUp
+          ? 'New articles land here as your feeds update.'
+          : 'Add a feed and its items will appear here.';
         listEl.innerHTML = '';
         return;
       }
@@ -352,9 +356,6 @@
         await api('/api/items/' + it.id + (read ? '/read' : '/unread'), { method: 'POST' });
         it.read = read;
         unreadTotal = Math.max(0, unreadTotal + (read ? -1 : 1));
-        if (filter === 'unread' && read) {
-          items = items.filter(function (x) { return x.id !== it.id; });
-        }
         renderList();
       } catch (err) { if (unNative.toast) unNative.toast(err.message); }
     }
@@ -538,11 +539,10 @@
     }
 
     // ---- theme --------------------------------------------------------------
-    // Follows the platform: the OS/iframe colour scheme is the default and a
-    // mode picked here is persisted over it. setAppearance reports the
-    // RESOLVED scheme (never the tri-state choice) plus the page ground so
-    // the shell can match the platform bar and the cold-launch screen.
-    const THEME_KEY = 'rss-theme-mode';
+    // Follows the platform: the OS/iframe colour scheme decides the mode
+    // (no in-app picker). setAppearance reports the RESOLVED scheme plus the
+    // page ground so the shell can match the platform bar and the
+    // cold-launch screen.
     function isDark() { return document.documentElement.classList.contains('dark'); }
     function resolvedScheme() { return isDark() ? 'dark' : 'light'; }
     function reportAppearance() {
@@ -561,40 +561,34 @@
       } catch (_) {}
     }
     function syncThemeUI() {
-      $('theme-icon-sun').style.display = isDark() ? '' : 'none';
-      $('theme-icon-moon').style.display = isDark() ? 'none' : '';
       const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute('content', isDark() ? '#09090b' : '#f4f4f5');
     }
-    function applyMode(mode) {
-      const dark = mode === 'dark' || (mode !== 'light' &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches);
-      document.documentElement.classList.toggle('dark', dark);
-      document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
-      syncThemeUI();
-      reportAppearance();
-    }
-    $('theme-btn').addEventListener('click', function () {
-      const next = isDark() ? 'light' : 'dark';
-      try { localStorage.setItem(THEME_KEY, next); } catch (_) {}
-      applyMode(next);
-    });
     try {
       window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
-        if (!localStorage.getItem(THEME_KEY)) applyMode('system');
+        // Live-follow the OS scheme change: re-sync colorScheme, the meta
+        // tag and the shell appearance. The dark class was already set by
+        // the bootstrap; re-toggling from the media query result is exact.
+        const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.classList.toggle('dark', dark);
+        document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+        syncThemeUI();
+        reportAppearance();
       });
     } catch (_) {}
     syncThemeUI();
     reportAppearance();
 
-    $('seg-unread').addEventListener('click', function () { setFilter('unread'); });
-    $('seg-all').addEventListener('click', function () { setFilter('all'); });
     $('add-btn').addEventListener('click', presentAddSheet);
     $('feeds-add-btn').addEventListener('click', presentAddSheet);
     $('article-back').addEventListener('click', closeArticle);
     $('feeds-btn').addEventListener('click', openFeeds);
     $('feeds-back').addEventListener('click', closeFeeds);
     $('feeds-refresh-all').addEventListener('click', refreshAllFeeds);
+    $('show-past-btn').addEventListener('click', function () {
+      setFilter('all');
+      $('list-scroll').scrollTo({ top: $('show-past-btn').offsetTop - 80, behavior: 'smooth' });
+    });
 
     if (unNative.attachPullToRefresh) {
       unNative.attachPullToRefresh(listScroll, async function () {
