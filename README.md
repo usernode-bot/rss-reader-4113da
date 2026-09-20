@@ -1,27 +1,26 @@
 # RSS Reader
 
-> **Starter template** — this repo was scaffolded by Homeroom Social
-> Vibecoding. Everything in it is placeholder example code until the
-> app's first real feature is built.
+A Feedly-style RSS reader for Homeroom, built with a mobile-native UI.
 
-The scaffold is a small working demo that proves the plumbing works:
+## What it does
 
-- **Sign-in** — the server verifies the platform-issued user token
-  (an RS256 JWT) on every request, so the app already knows who is
-  using it. No accounts to build.
-- **Database** — the app has its own private Postgres database; the
-  demo stores button presses in a `presses` table.
-- **Live API** — two example routes (`/api/press`,
-  `/api/leaderboard`) read and write through a real Express server.
-- **Styling** — Tailwind CSS, precompiled by `npm run build` during
-  image creation with either Kubernetes/Paketo or standalone Docker.
+- **Per-user private feeds.** Each Homeroom user has their own feed list and
+  read state. The `feeds` and `items` tables are marked `staging:private`, so
+  staging previews never show anyone else's subscriptions.
+- **Unread / All.** The main screen is a flat, scrollable item list with an
+  Unread / All segmented control, Feedly-style.
+- **Inline article preview.** Tapping an item pushes an article screen with
+  the feed's summary HTML and an "Open in browser" link to the original post.
+- **Feed management.** Add an RSS/Atom URL from the "+" button, refresh all
+  feeds from the Feeds screen, swipe a feed row left to remove it.
 
-## Replacing the template
+## Stack notes
 
-Open the app on Homeroom, tap **Improve** in the header, and describe
-the app you want in plain English — the template will be replaced with
-your real app. You can also run Claude Code against this repo directly;
-start with `CLAUDE.md`, which carries the app-specific notes and
-points at the platform rules.
-
-Once the real app exists, rewrite this README to describe it.
+- Node/Express server (`server.js`) with Postgres via `pg`; feeds are fetched
+  and parsed server-side with `rss-parser`.
+- The frontend uses the platform's hosted native UI kit (`usernode-native`)
+  for nav bars, grouped lists, swipe actions, sheets and push/pop transitions,
+  with a precompiled Tailwind stylesheet.
+- Staging previews seed obviously fake demo feeds and items so the screens
+  can be reviewed without real credentials; production requires the normal
+  Homeroom iframe token on every API call.
