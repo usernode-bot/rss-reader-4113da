@@ -1,0 +1,37 @@
+[   15603ms] [LOG] [bridge top 127.0.0.1:3103] loaded; inIframe=false hasNativeChannel=false hasUsernode=undefined @ http://127.0.0.1:3103/:71
+[   15622ms] Error: setAppearance is only available inside the Usernode mobile app.
+    at callNativeChromeAction (http://127.0.0.1:3103/usernode-bridge/v1/bridge.js:4981:29)
+    at window.usernode.setAppearance (http://127.0.0.1:3103/usernode-bridge/v1/bridge.js:5469:12)
+    at reportAppearance (http://127.0.0.1:3103/:556:27)
+    at http://127.0.0.1:3103/:585:5
+[   43805ms] [LOG] [bridge top 127.0.0.1:3103] loaded; inIframe=false hasNativeChannel=false hasUsernode=undefined @ http://127.0.0.1:3103/:71
+[   43886ms] Error: setAppearance is only available inside the Usernode mobile app.
+    at callNativeChromeAction (http://127.0.0.1:3103/usernode-bridge/v1/bridge.js:4981:29)
+    at window.usernode.setAppearance (http://127.0.0.1:3103/usernode-bridge/v1/bridge.js:5469:12)
+    at reportAppearance (http://127.0.0.1:3103/:556:27)
+    at http://127.0.0.1:3103/:585:5
+[   43989ms] [LOG] [bridge top 127.0.0.1:3103] loaded; inIframe=false hasNativeChannel=false hasUsernode=undefined @ http://127.0.0.1:3103/:71
+[   44020ms] Error: setAppearance is only available inside the Usernode mobile app.
+    at callNativeChromeAction (http://127.0.0.1:3103/usernode-bridge/v1/bridge.js:4981:29)
+    at window.usernode.setAppearance (http://127.0.0.1:3103/usernode-bridge/v1/bridge.js:5469:12)
+    at reportAppearance (http://127.0.0.1:3103/:556:27)
+    at http://127.0.0.1:3103/:585:5
+[   45399ms] Error: setAppearance is only available inside the Usernode mobile app.
+    at callNativeChromeAction (http://127.0.0.1:3103/usernode-bridge/v1/bridge.js:4981:29)
+    at window.usernode.setAppearance (http://127.0.0.1:3103/usernode-bridge/v1/bridge.js:5469:12)
+    at reportAppearance (http://127.0.0.1:3103/:556:27)
+    at applyMode (http://127.0.0.1:3103/:572:7)
+    at HTMLButtonElement.<anonymous> (http://127.0.0.1:3103/:577:7)
+[   46540ms] [LOG] [bridge top 127.0.0.1:3103] loaded; inIframe=false hasNativeChannel=false hasUsernode=undefined @ http://127.0.0.1:3103/:71
+[   46544ms] Error: setAppearance is only available inside the Usernode mobile app.
+    at callNativeChromeAction (http://127.0.0.1:3103/usernode-bridge/v1/bridge.js:4981:29)
+    at window.usernode.setAppearance (http://127.0.0.1:3103/usernode-bridge/v1/bridge.js:5469:12)
+    at reportAppearance (http://127.0.0.1:3103/:556:27)
+    at http://127.0.0.1:3103/:585:5
+[   47715ms] Error: setAppearance is only available inside the Usernode mobile app.
+    at callNativeChromeAction (http://127.0.0.1:3103/usernode-bridge/v1/bridge.js:4981:29)
+    at window.usernode.setAppearance (http://127.0.0.1:3103/usernode-bridge/v1/bridge.js:5469:12)
+    at reportAppearance (http://127.0.0.1:3103/:556:27)
+    at applyMode (http://127.0.0.1:3103/:572:7)
+    at HTMLButtonElement.<anonymous> (http://127.0.0.1:3103/:577:7)
+[  127926ms] [LOG] [bridge top 127.0.0.1:3103] loaded; inIframe=false hasNativeChannel=false hasUsernode=undefined @ http://127.0.0.1:3103/:71

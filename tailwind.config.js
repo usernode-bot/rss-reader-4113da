@@ -20,8 +20,9 @@ module.exports = {
   // extractor cannot see them. Prefer whole literals in the markup instead.
   safelist: [],
 
-  // Matches the <html class="dark"> in public/index.html: dark: variants key
-  // off that class rather than the OS colour-scheme preference.
+  // Light/dark are switched by a `dark` class on <html> (see the theme
+  // bootstrap in public/index.html: the OS/iframe preference is the default
+  // and a user-picked mode overrides it and is persisted).
   darkMode: 'class',
 
   // Stops hover: styles sticking after a tap on touch screens. Required by
