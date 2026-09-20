@@ -644,8 +644,16 @@
       });
     }
 
-    setFilter(filter);
-    loadItems();
+    // ?demo=1 seeds a couple of fake rows for the CALLING user first, so a
+    // staging preview (or a fresh reviewer account) has something to look
+    // at. Staging-only on the server; a plain load never touches it.
+    (async function () {
+      if (params.get('demo') === '1') {
+        try { await api('/api/demo-items?demo=1'); } catch (err) {}
+      }
+      setFilter(filter);
+      loadItems();
+    })();
 
     // Testing deep links: let a review URL open a screen directly.
     // Pure UI state only; no data is written here.

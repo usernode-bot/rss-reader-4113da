@@ -20,7 +20,7 @@
     {
       "id": "rss.item-thumbnails",
       "name": "Item thumbnails render",
-      "path": "/",
+      "path": "/?demo=1",
       "expectSelector": "#item-list img",
       "visual": true,
       "impact": ["public/index.html", "server.js"]
