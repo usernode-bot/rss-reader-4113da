@@ -173,12 +173,24 @@
         <button id="feeds-btn" class="un-touch-target w-11 h-11 flex items-center justify-center text-violet-600 dark:text-violet-400" aria-label="Feeds">
           <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
         </button>
-        <div class="un-navbar-title text-[17px] font-semibold flex-1 text-center truncate" id="list-title">Unread</div>
+        <div class="flex-1 flex items-center justify-center min-w-0">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="text-[17px] font-semibold truncate" id="list-title">Unread</div>
+            <span id="unread-badge" class="shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full bg-violet-600/10 text-violet-700 dark:bg-violet-600/20 dark:text-violet-300">0</span>
+          </div>
+        </div>
+        <button id="mark-all-btn" class="un-touch-target w-11 h-11 flex items-center justify-center text-violet-600 dark:text-violet-400" aria-label="Mark all as read">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        </button>
         <button id="add-btn" class="un-touch-target w-11 h-11 flex items-center justify-center text-violet-600 dark:text-violet-400" aria-label="Add feed">
           <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
         </button>
       </div>
       <div id="filter-hint" class="px-4 pb-2 pt-1 text-xs text-zinc-500 truncate"></div>
+      <button id="main-refresh-btn" class="w-full px-4 pb-2 text-left inline-flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400 font-medium">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+        Refresh feeds
+      </button>
     </div>
 
     <div id="list-scroll" class="flex-1 overflow-y-auto overscroll-contain pt-[64px]">
@@ -204,7 +216,7 @@
         <svg id="feeds-refresh-icon" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
       </button>
     </div>
-    <div id="feeds-scroll" class="flex-1 overflow-y-auto overscroll-contain">
+    <div id="feeds-scroll" class="flex-1 overflow-y-auto overscroll-contain pt-16">
       <div class="max-w-2xl mx-auto px-4 pt-4 pb-28">
         <div id="feed-list" class="un-group overflow-hidden"></div>
         <button id="feeds-add-btn" class="mt-4 w-full py-3 rounded-xl bg-violet-600 text-white font-semibold active:scale-[0.98]">Add a feed</button>
@@ -306,6 +318,9 @@
       $('filter-hint').textContent = filter === 'all'
         ? 'All articles, newest first'
         : (read.length ? unread.length + ' unread · ' + read.length + ' already read' : 'Nothing new right now');
+      // The unread count sits next to the title, not in the hint line.
+      $('unread-badge').textContent = String(unreadTotal || 0);
+      $('unread-badge').classList.toggle('hidden', !(unreadTotal > 0));
       $('show-past-btn').classList.toggle('hidden', pastShown || !read.length);
       $('empty-state').className = isEmpty ? 'flex flex-col items-center justify-center text-center px-8 pt-24 gap-3' : 'hidden';
       if (isEmpty) {
@@ -320,7 +335,9 @@
         var readCls = it.read ? ' opacity-50' : '';
         return (
           '<div class="un-swipe"><div class="un-group-row' + readCls + ' flex items-start gap-3 px-4 py-3 cursor-pointer" data-id="' + it.id + '" role="button" tabindex="0">' +
-            '<span class="mt-1.5 w-2 h-2 rounded-full shrink-0" style="background:' + esc(it.feed_color || '#7c3aed') + '"></span>' +
+            (it.thumb_url
+              ? '<img src="' + esc(it.thumb_url) + '" alt="" loading="lazy" referrerpolicy="no-referrer" class="w-14 h-14 rounded-xl object-cover shrink-0" onerror="this.style.display=\'none\'">'
+              : '<span class="mt-1.5 w-2 h-2 rounded-full shrink-0" style="background:' + esc(it.feed_color || '#7c3aed') + '"></span>') +
             '<div class="min-w-0 flex-1">' +
               '<p class="text-[15px] font-semibold leading-snug text-zinc-900 dark:text-zinc-100 line-clamp-2">' + esc(it.title) + '</p>' +
               '<p class="mt-1 text-xs text-zinc-500 truncate">' + esc(it.feed_title) + '</p>' +
@@ -497,6 +514,29 @@
       icon.classList.remove('animate-spin');
     }
 
+    async function refreshAll() {
+      const icons = document.querySelectorAll('#main-refresh-btn svg, #feeds-refresh-icon');
+      icons.forEach(function (i) { i.classList.add('animate-spin'); });
+      try {
+        const data = await api('/api/feeds');
+        for (const f of data.feeds) {
+          await api('/api/feeds/' + f.id + '/refresh', { method: 'POST' });
+        }
+        await loadItems();
+        await loadFeeds();
+        if (unNative.toast) unNative.toast('Feeds refreshed');
+      } catch (err) { if (unNative.toast) unNative.toast(err.message); }
+      icons.forEach(function (i) { i.classList.remove('animate-spin'); });
+    }
+
+    async function markAllRead() {
+      try {
+        await api('/api/read-all', { method: 'POST' });
+        if (unNative.toast) unNative.toast('All articles marked as read');
+        await loadItems();
+      } catch (err) { if (unNative.toast) unNative.toast(err.message); }
+    }
+
     function presentAddSheet() {
       $('add-feed-input').value = '';
       $('add-feed-error').textContent = '';
@@ -585,6 +625,10 @@
     $('feeds-btn').addEventListener('click', openFeeds);
     $('feeds-back').addEventListener('click', closeFeeds);
     $('feeds-refresh-all').addEventListener('click', refreshAllFeeds);
+    $('main-refresh-btn').addEventListener('click', refreshAll);
+    $('mark-all-btn').addEventListener('click', markAllRead);
+    $('main-refresh-btn').addEventListener('click', refreshAll);
+    $('mark-all-btn').addEventListener('click', markAllRead);
     $('show-past-btn').addEventListener('click', function () {
       setFilter('all');
       $('list-scroll').scrollTo({ top: $('show-past-btn').offsetTop - 80, behavior: 'smooth' });
