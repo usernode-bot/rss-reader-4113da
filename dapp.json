@@ -10,6 +10,22 @@
       "impact": ["public/index.html", "server.js", "styles/tailwind-input.css"]
     },
     {
+      "id": "rss.mark-all-read",
+      "name": "Mark all read button",
+      "path": "/?view=feeds",
+      "expectSelector": "#mark-all-btn",
+      "visual": true,
+      "impact": ["public/index.html", "server.js"]
+    },
+    {
+      "id": "rss.item-thumbnails",
+      "name": "Item thumbnails render",
+      "path": "/?demo=1",
+      "expectSelector": "#item-list img",
+      "visual": true,
+      "impact": ["public/index.html", "server.js"]
+    },
+    {
       "id": "rss.feeds-screen",
       "name": "Feeds screen renders",
       "path": "/?view=feeds",

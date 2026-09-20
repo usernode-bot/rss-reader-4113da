@@ -27,6 +27,9 @@ const PUBLIC_API_PATHS = new Set(['/health']);
 // iframe token (a tokenless staging load). Production never takes this
 // branch: it requires a real, verified token for every API request.
 const STAGING_DEMO_USER_ID = 900001;
+// A tiny SVG data URI used as the thumbnail on staged items so previews can
+// exercise the thumbnail layout without any remote image.
+const STAGING_THUMB = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230ea5e9'/%3E%3Ccircle cx='32' cy='32' r='13' fill='white'/%3E%3C/svg%3E";
 // Staging-only demo data lives behind this query flag so a preview reviewer
 // can see the list populated without touching production data. Gated on
 // IS_STAGING; the plain route stays honest and returns a real user's rows.
@@ -118,6 +121,36 @@ function titleFromHtml(html) {
   return m ? stripHtml(m[1]) : '';
 }
 
+// Pull the most specific image for an item: the enclosure, media tags, then
+// the first <img> in the content. Only http(s) URLs are accepted.
+function extractThumb(p) {
+  const candidates = [];
+  if (p.enclosure && p.enclosure.url) candidates.push(p.enclosure.url);
+  const mediaList = Array.isArray(p['media:content'])
+    ? p['media:content']
+    : (p['media:content'] ? [p['media:content']] : []);
+  for (const m of mediaList) {
+    if (m && m.url) candidates.push(m.url);
+    const nested = m && m['media:thumbnail'];
+    const nestedList = Array.isArray(nested) ? nested : (nested ? [nested] : []);
+    for (const t of nestedList) { if (t && t.url) candidates.push(t.url); }
+  }
+  const thumbs = p['media:thumbnail'];
+  for (const t of (Array.isArray(thumbs) ? thumbs : (thumbs ? [thumbs] : []))) {
+    if (t && t.url) candidates.push(t.url);
+  }
+  const html = p['content:encoded'] || p.content || p.summary || '';
+  const m = /<img[^>]+src=["']?([^"'\s>]+)/i.exec(String(html));
+  if (m) candidates.push(m[1]);
+  for (const c of candidates) {
+    try {
+      const u = new URL(String(c).trim());
+      if (u.protocol === 'https:' || u.protocol === 'http:') return u.href;
+    } catch {}
+  }
+  return '';
+}
+
 // Item summaries are stored as HTML so the article preview can show
 // paragraphs and images. Scripts and inline event handlers are removed
 // before anything is stored.
@@ -187,6 +220,7 @@ function itemFromParsed(p, feedId) {
     link,
     title: title.slice(0, 500),
     summary,
+    thumb_url: extractThumb(p),
     author: stripHtml(p.creator || p.author || ''),
     published: published && !isNaN(Date.parse(published)) ? new Date(published) : null,
   };
@@ -229,6 +263,7 @@ const BOOT_SQL = `
     UNIQUE (user_id, guid)
   );
   CREATE INDEX IF NOT EXISTS items_user_published_idx ON items (user_id, published DESC);
+  ALTER TABLE items ADD COLUMN IF NOT EXISTS thumb_url TEXT NOT NULL DEFAULT '';
   COMMENT ON TABLE feeds IS 'staging:private';
   COMMENT ON TABLE items IS 'staging:private';
 `;
@@ -254,13 +289,15 @@ async function seedStaging() {
     );
   }
   const { rows } = await pool.query(
-    `INSERT INTO items (feed_id, user_id, guid, link, title, summary, published, read, bookmarked)
+    `INSERT INTO items (feed_id, user_id, guid, link, title, summary, thumb_url, published, read, bookmarked)
      SELECT f.id, f.user_id, 'staging-demo-item-' || n.n, f.url || '#item-' || n.n, 'Staging demo item ' || n.n,
             '<p>Seeded preview content for the RSS reader. This item is fake and belongs to a demo feed.</p>',
+            $1,
             NOW() - (n.n * interval '1 hour'), n.n > 2, n.n = 4
      FROM feeds f, generate_series(1, 6) AS n(n)
      WHERE f.url LIKE 'https://staging-demo.invalid/%'
-     ON CONFLICT (user_id, guid) DO NOTHING`
+     ON CONFLICT (user_id, guid) DO NOTHING`,
+    [STAGING_THUMB]
   );
   if (rows.length) console.log('[staging] seeded demo feeds/items');
 }
@@ -288,13 +325,14 @@ app.get('/api/demo-items', async (req, res) => {
     );
     if (feedRow.rowCount) {
       await pool.query(
-        `INSERT INTO items (feed_id, user_id, guid, link, title, summary, published, read)
+        `INSERT INTO items (feed_id, user_id, guid, link, title, summary, thumb_url, published, read)
          SELECT $1, $2, 'staging-demo-user-item-' || n.n, '', 'Staging demo item ' || n.n,
                 '<p>Seeded preview content for the RSS reader. This item is fake and belongs to a demo feed.</p>',
+                $3,
                 NOW() - (n.n * interval '1 hour'), n.n > 4
          FROM generate_series(1, 6) AS n(n)
          ON CONFLICT (user_id, guid) DO NOTHING`,
-        [feedRow.rows[0].id, uid2]
+        [feedRow.rows[0].id, uid2, STAGING_THUMB]
       );
     }
     return res.json({ seeded: true });
@@ -321,11 +359,11 @@ async function refreshFeed(feedRow) {
       const it = itemFromParsed(p, feedRow.id);
       if (!it.guid) continue;
       const inserted = await pool.query(
-        `INSERT INTO items (feed_id, user_id, guid, link, title, summary, author, published)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `INSERT INTO items (feed_id, user_id, guid, link, title, summary, thumb_url, author, published)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          ON CONFLICT (user_id, guid) DO NOTHING
          RETURNING id`,
-        [it.feed_id, feedRow.user_id, it.guid, it.link, it.title, it.summary, it.author, it.published]
+        [it.feed_id, feedRow.user_id, it.guid, it.link, it.title, it.summary, it.thumb_url, it.author, it.published]
       );
       if (inserted.rowCount) newCount += inserted.rowCount;
     }
@@ -430,7 +468,7 @@ app.get('/api/items', async (req, res) => {
     const filter = req.query.filter === 'all' ? 'all' : 'unread';
     const limit = Math.min(parseInt(req.query.limit, 10) || 200, 500);
     const { rows } = await pool.query(
-      `SELECT i.id, i.feed_id, i.link, i.title, i.summary, i.author, i.published,
+      `SELECT i.id, i.feed_id, i.link, i.title, i.summary, i.thumb_url, i.author, i.published,
               i.read, i.bookmarked, f.title AS feed_title, f.color AS feed_color, f.icon_url
        FROM items i
        JOIN feeds f ON f.id = i.feed_id
