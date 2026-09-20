@@ -2,8 +2,10 @@
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>RSS Reader</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%237c3aed'/><circle cx='50' cy='50' r='18' fill='white'/></svg>">
+
   <script>
   // usernode-dev-console@1
   (function () {
@@ -27,7 +29,6 @@
             seen.add(val);
           }
           if (typeof val === 'function') return '[Function ' + (val.name || 'anonymous') + ']';
-          if (val instanceof Error) return val.stack || (val.name + ': ' + val.message);
           return val;
         });
       } catch (e) { try { return String(v); } catch (_) { return '[unserializable]'; } }
@@ -48,7 +49,7 @@
       } catch (_) {}
     }
     ['log','info','warn','error','debug'].forEach(function (level) {
-      var orig = console[level] ? console[level].bind(console) : function () {};
+      var orig = console[level] ? console[level] : function () {};
       console[level] = function () { post(level, arguments); orig.apply(null, arguments); };
     });
     window.addEventListener('error', function (e) {
@@ -63,132 +64,475 @@
     try { post('info', ['[dev-console ready]'], { kind: 'ready' }); } catch (_) {}
   })();
   </script>
-  <title>RSS Reader</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%237c3aed'/><circle cx='50' cy='50' r='18' fill='white'/></svg>">
-  <!-- Tailwind, PRECOMPILED for this app (was cdn.tailwindcss.com's
-       in-browser engine plus an inline tailwind.config here). The config
-       moved to tailwind.config.js in the repo root; npm run build compiles
-       it to public/tailwind.css with Docker or Paketo on every image build, so the
-       stylesheet is regenerated from THIS commit's markup every deploy and
-       can never drift behind the code. ~7 KB of CSS instead of a ~400 KB
-       engine, and no flash of unstyled content.
-       Writing class names as whole literals is what keeps this working — a
-       class assembled from fragments at runtime (e.g. "bg-" + tone + "-500")
-       is invisible to the compiler. If you genuinely need runtime-generated
-       classes, swap this link for the platform-hosted engine instead:
-       <script src="/usernode-tailwind/v1/tailwind.js"></script> -->
+
+  <!-- Tailwind is precompiled for this app: npm run build generates
+       /tailwind.css from this markup on every image build. Class names
+       below are written as whole literals so the extractor sees them. -->
   <link rel="stylesheet" href="/tailwind.css">
-  <!-- The platform bridge, centrally hosted and loaded by RELATIVE path (the
-       handler in server.js serves it under a plain "node server.js"; the
-       platform's edge answers it everywhere else). Never vendor it and never
-       write a hostname in front of it.
-       It is NOT conditional on this app calling a bridge API: it is also how
-       the app ANSWERS the shell, so a scaffold without it is invisible to
-       anything that asks the frame a question. Offline launch is one of those.
-       Another is the page's colour: the bridge reports this document's opaque
-       ground to the shell (#1581), which is what makes the platform bar above
-       the app take the app's tone instead of the viewer's theme (#1945). This
-       scaffold paints a dark page (bg-zinc-950 on the body element), so
-       without this tag a brand-new app sits under a light bar. -->
+  <!-- Centrally hosted platform files, by relative path. The bridge is how
+       the app answers the shell; the native kit gives the mobile-native feel. -->
   <script src="/usernode-bridge/v1/bridge.js"></script>
+  <link rel="stylesheet" href="/usernode-native/v1/native.css">
+  <script src="/usernode-native/v1/native.js"></script>
+
+  <style>
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .article-body { font-size: 1rem; line-height: 1.7; color: #d4d4d8; overflow-wrap: break-word; }
+    .article-body p { margin: 0 0 1em; }
+    .article-body img { max-width: 100%; height: auto; border-radius: 0.75rem; margin: 0.5em 0; }
+    .article-body h1, .article-body h2, .article-body h3 { color: #fafafa; line-height: 1.3; margin: 1.2em 0 0.5em; font-size: 1.1rem; }
+    .article-body a { color: #8b5cf6; }
+    .article-body blockquote { border-left: 3px solid #3f3f46; padding-left: 0.9em; color: #a1a1aa; margin: 1em 0; }
+    .article-body ul, .article-body ol { padding-left: 1.4em; margin: 0 0 1em; }
+    .article-body pre { background: #18181b; border-radius: 0.5rem; padding: 0.8em; overflow-x: auto; font-size: 0.85em; }
+    .seg-active { background: #27272a; color: #fafafa; }
+    .seg-inactive { background: transparent; color: #a1a1aa; }
+  </style>
 </head>
-<body class="bg-zinc-950 text-zinc-100 min-h-screen">
-  <main class="max-w-md mx-auto px-4 py-10 flex flex-col gap-6">
+<body class="bg-zinc-950 text-zinc-100">
 
-    <!-- usernode-starter-notice@1 — starter-template messaging. When building
-         the user's real app, replace this whole screen and delete this block,
-         both sentinel comments included. -->
-    <section class="rounded-2xl border border-violet-500/30 bg-gradient-to-b from-violet-600/20 to-transparent p-6 text-center flex flex-col items-center gap-3">
-      <span class="inline-block rounded-full bg-violet-600/20 text-violet-300 text-xs font-semibold uppercase tracking-wide px-3 py-1">Starter template</span>
-      <h1 class="text-2xl font-bold">RSS Reader</h1>
-      <p class="text-sm text-zinc-300 leading-relaxed">Welcome to your new app! Everything on this screen is placeholder content that came with it.</p>
-      <p class="text-sm text-zinc-300 leading-relaxed">Tap <strong class="text-violet-300 font-semibold">Improve</strong> in the header, describe what you'd like in plain English, and it will be turned into your real app.</p>
-    </section>
-
-    <section>
-      <h2 class="text-sm font-medium text-zinc-500 mb-2 px-1">What's already working</h2>
-      <div class="rounded-xl border border-zinc-800 bg-zinc-900/60 divide-y divide-zinc-800">
-        <div class="flex items-start gap-3 p-4">
-          <svg class="w-5 h-5 text-violet-400 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7 7a1 1 0 0 1-1.4 0l-3-3a1 1 0 1 1 1.4-1.4L9 11.6l6.3-6.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
-          <div>
-            <p class="text-sm font-semibold text-zinc-100">Sign-in</p>
-            <p class="text-sm text-zinc-400">You're signed in through Homeroom automatically — no accounts to build.</p>
-          </div>
-        </div>
-        <div class="flex items-start gap-3 p-4">
-          <svg class="w-5 h-5 text-violet-400 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7 7a1 1 0 0 1-1.4 0l-3-3a1 1 0 1 1 1.4-1.4L9 11.6l6.3-6.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
-          <div>
-            <p class="text-sm font-semibold text-zinc-100">Database</p>
-            <p class="text-sm text-zinc-400">Your app has its own private database, ready to store things.</p>
-          </div>
-        </div>
-        <div class="flex items-start gap-3 p-4">
-          <svg class="w-5 h-5 text-violet-400 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7 7a1 1 0 0 1-1.4 0l-3-3a1 1 0 1 1 1.4-1.4L9 11.6l6.3-6.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
-          <div>
-            <p class="text-sm font-semibold text-zinc-100">Live API</p>
-            <p class="text-sm text-zinc-400">The example below talks to a real server — try it.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-    <!-- /usernode-starter-notice@1 -->
-
-    <section class="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 flex flex-col items-center gap-5">
-      <div class="w-full flex items-baseline justify-between gap-2">
-        <h2 class="text-sm font-medium text-zinc-500">Try the example</h2>
-        <span class="text-xs text-zinc-600">This example will be replaced</span>
-      </div>
-
-      <button id="press-btn" class="w-32 h-32 rounded-full bg-violet-600 hover:bg-violet-500 active:scale-95 transition-all text-white text-xl font-bold shadow-lg shadow-violet-600/30">
-        Press!
+  <!-- Article view, pushed over the list -->
+  <div id="article-view" class="fixed inset-0 bg-zinc-950 flex-col" style="display:none;z-index:200">
+    <div class="un-navbar un-safe-top flex items-center gap-2 px-2">
+      <button id="article-back" class="un-navbar-back un-touch-target w-11 h-11 flex items-center justify-center" aria-label="Back">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
-
-      <div id="count" class="text-lg text-zinc-400">0 total presses</div>
-
-      <div class="w-full max-w-sm">
-        <h3 class="text-sm font-medium text-zinc-500 mb-2 text-center">Leaderboard</h3>
-        <div id="leaderboard" class="space-y-1"></div>
+      <div class="un-navbar-title text-base font-semibold truncate"></div>
+      <a id="article-open-link" href="#" target="_blank" rel="noopener"
+         class="ml-auto shrink-0 inline-flex items-center gap-1.5 text-[13px] font-medium px-3 py-1.5 rounded-full bg-violet-600/20 text-violet-300">
+        Open in browser
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg>
+      </a>
+    </div>
+    <div id="article-scroll" class="flex-1 overflow-y-auto overscroll-contain">
+      <div class="max-w-2xl mx-auto px-4 pt-5 pb-24">
+        <div class="flex items-center gap-2 text-xs text-zinc-500 mb-2">
+          <span id="article-feed-dot" class="w-2 h-2 rounded-full shrink-0"></span>
+          <span id="article-feed-name" class="truncate"></span>
+        </div>
+        <h1 id="article-title" class="text-2xl font-bold leading-snug text-zinc-50 mb-2"></h1>
+        <p id="article-meta" class="text-xs text-zinc-500 mb-5"></p>
+        <div id="article-body" class="article-body"></div>
+        <a id="article-open-link-2" href="#" target="_blank" rel="noopener"
+           class="mt-6 inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-violet-600 text-white text-sm font-semibold">
+          Open original in browser
+        </a>
       </div>
-    </section>
+    </div>
+  </div>
 
-    <p class="text-center text-xs text-zinc-600">Built on Homeroom — this template screen disappears once you build your real app.</p>
+  <!-- Main list screen -->
+  <main id="main-view" class="h-full flex flex-col">
+    <div class="un-navbar un-safe-top" style="padding-left:0.5rem;padding-right:0.5rem;">
+      <div class="flex items-center w-full gap-1">
+        <button id="feeds-btn" class="un-touch-target w-11 h-11 flex items-center justify-center text-violet-400" aria-label="Feeds">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
+        </button>
+        <div class="un-navbar-title text-[17px] font-semibold flex-1 text-center truncate" id="list-title">Unread</div>
+        <button id="add-btn" class="un-touch-target w-11 h-11 flex items-center justify-center text-violet-400" aria-label="Add feed">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        </button>
+      </div>
+      <div id="filter-seg" class="flex mx-3 mt-2 mb-2.5 rounded-xl bg-zinc-900 p-0.5 gap-0.5 text-sm font-medium">
+        <button id="seg-unread" class="seg-active flex-1 py-1.5 rounded-[10px] text-center">Unread</button>
+        <button id="seg-all" class="seg-inactive flex-1 py-1.5 rounded-[10px] text-center">All</button>
+      </div>
+    </div>
+
+    <div id="list-scroll" class="flex-1 overflow-y-auto overscroll-contain pt-[112px]">
+      <div id="empty-state" class="hidden flex-col items-center justify-center text-center px-8 pt-24 gap-3">
+        <svg class="w-12 h-12 text-zinc-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
+        <p id="empty-title" class="text-zinc-300 font-medium">You're all caught up</p>
+        <p id="empty-hint" class="text-sm text-zinc-500">Tap + to add a feed, then new items show up here.</p>
+      </div>
+      <div id="item-list" class="un-group mx-3 mb-3 overflow-hidden"></div>
+    </div>
   </main>
 
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token') || '';
-    const headers = token ? { 'x-usernode-token': token } : {};
+  <!-- Feeds screen, pushed over the list -->
+  <div id="feeds-view" class="fixed inset-0 bg-zinc-950 flex-col" style="display:none;z-index:200">
+    <div class="un-navbar un-safe-top flex items-center gap-2 px-2">
+      <button id="feeds-back" class="un-navbar-back un-touch-target w-11 h-11 flex items-center justify-center" aria-label="Back">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="un-navbar-title text-base font-semibold">Your feeds</div>
+      <button id="feeds-refresh-all" class="ml-auto un-touch-target w-11 h-11 flex items-center justify-center text-violet-400" aria-label="Refresh all feeds">
+        <svg id="feeds-refresh-icon" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+      </button>
+    </div>
+    <div id="feeds-scroll" class="flex-1 overflow-y-auto overscroll-contain">
+      <div class="max-w-2xl mx-auto px-4 pt-4 pb-28">
+        <div id="feed-list" class="un-group overflow-hidden"></div>
+        <button id="feeds-add-btn" class="mt-4 w-full py-3 rounded-xl bg-violet-600 text-white font-semibold active:scale-[0.98]">Add a feed</button>
+        <p class="mt-3 text-xs text-zinc-600 text-center">Feeds refresh when you add them and from this screen. Swipe a row left to remove it.</p>
+      </div>
+    </div>
+  </div>
 
-    async function loadLeaderboard() {
-      const res = await fetch('/api/leaderboard', { headers });
-      if (!res.ok) return;
-      const { leaderboard } = await res.json();
-      const el = document.getElementById('leaderboard');
-      if (!leaderboard.length) {
-        el.innerHTML = '<p class="text-center text-zinc-600 text-sm">No presses yet</p>';
-        return;
-      }
-      el.innerHTML = leaderboard.map((r, i) =>
-        '<div class="flex justify-between px-3 py-1 rounded ' + (i === 0 ? 'bg-violet-600/20 text-violet-300' : 'text-zinc-400') + '">' +
-        '<span>' + (i + 1) + '. ' + r.username + '</span>' +
-        '<span class="font-mono">' + r.presses + '</span></div>'
-      ).join('');
-      const total = leaderboard.reduce((s, r) => s + parseInt(r.presses), 0);
-      document.getElementById('count').textContent = total + ' total presses';
+  <!-- Add-feed sheet content (moved into the kit's sheet when presented) -->
+  <div id="add-sheet-content" class="hidden px-4 pb-2 pt-1">
+    <h2 class="text-lg font-semibold mb-1">Add a feed</h2>
+    <p class="text-sm text-zinc-500 mb-3">Paste the RSS or Atom URL.</p>
+    <input id="add-feed-input" type="url" inputmode="url" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+           placeholder="https://example.com/feed.xml"
+           class="w-full px-3.5 py-3 rounded-xl bg-zinc-900 text-zinc-100 placeholder-zinc-600 text-[15px] outline-none ring-1 ring-zinc-800 focus:ring-violet-500">
+    <p id="add-feed-error" class="text-sm text-red-400 mt-2 min-h-[1.25rem]"></p>
+    <button id="add-feed-submit" class="mt-1 w-full py-3 rounded-xl bg-violet-600 text-white font-semibold active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">Add feed</button>
+  </div>
+
+  <script>
+    'use strict';
+
+    // The shell injects ?token= on load. Offline loads carry no token, so the
+    // last known one is kept in localStorage and reused. It only verifies
+    // identity; it is never destroyed here.
+    const TOKEN_KEY = 'rss-reader-token';
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token') || localStorage.getItem(TOKEN_KEY) || '';
+    if (params.get('token')) { try { localStorage.setItem(TOKEN_KEY, token); } catch (_) {} }
+    const authHeaders = token ? { 'x-usernode-token': token } : {};
+
+    async function api(path, opts) {
+      opts = opts || {};
+      const res = await fetch(path, {
+        method: opts.method || 'GET',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders, opts.headers || {}),
+        body: opts.body ? JSON.stringify(opts.body) : undefined,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Request failed (' + res.status + ')');
+      return data;
     }
 
-    document.getElementById('press-btn').addEventListener('click', async () => {
-      try {
-        const res = await fetch('/api/press', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...headers },
-        });
-        if (res.ok) loadLeaderboard();
-        else if (res.status === 401) document.getElementById('count').textContent = 'Sign in to press!';
-      } catch {}
-    });
+    let items = [];
+    let unreadTotal = 0;
+    let filter = localStorage.getItem('rss-filter') === 'all' ? 'all' : 'unread';
+    let openItemId = null;
+    let swipeHandles = [];
 
-    loadLeaderboard();
+    const $ = (id) => document.getElementById(id);
+    const listScroll = $('list-scroll');
+    const unNative = window.unNative || {};
+
+    function fmtTime(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      const diff = Date.now() - d.getTime();
+      const min = Math.floor(diff / 60000);
+      if (min < 1) return 'now';
+      if (min < 60) return min + 'm';
+      const h = Math.floor(min / 60);
+      if (h < 24) return h + 'h';
+      const days = Math.floor(h / 24);
+      if (days < 7) return days + 'd';
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
+
+    function esc(s) {
+      return String(s || '').replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/"/g, '"');
+    }
+
+    function setFilter(next) {
+      filter = next;
+      try { localStorage.setItem('rss-filter', next); } catch (_) {}
+      $('seg-unread').className = (filter === 'unread' ? 'seg-active' : 'seg-inactive') + ' flex-1 py-1.5 rounded-[10px] text-center';
+      $('seg-all').className = (filter === 'all' ? 'seg-active' : 'seg-inactive') + ' flex-1 py-1.5 rounded-[10px] text-center';
+      $('list-title').textContent = filter === 'unread' ? 'Unread' : 'All';
+      renderList();
+    }
+
+    function detachSwipes() {
+      swipeHandles.forEach(function (h) { try { h.detach(); } catch (_) {} });
+      swipeHandles = [];
+    }
+
+    function renderList() {
+      const listEl = $('item-list');
+      detachSwipes();
+      if (filter === 'unread') items = items.filter(function (it) { return !it.read; });
+      const shown = items;
+      const isEmpty = !shown.length;
+      $('empty-state').className = isEmpty ? 'flex flex-col items-center justify-center text-center px-8 pt-24 gap-3' : 'hidden';
+      if (isEmpty) {
+        $('empty-title').textContent = filter === 'all' ? 'No items yet' : "You're all caught up";
+        $('empty-hint').textContent = filter === 'all'
+          ? 'Add a feed and its items will appear here.'
+          : 'New items land here. Check All to reread something.';
+        listEl.innerHTML = '';
+        return;
+      }
+      listEl.innerHTML = shown.map(function (it) {
+        var readCls = it.read ? ' opacity-50' : '';
+        return (
+          '<div class="un-swipe"><div class="un-group-row' + readCls + ' flex items-start gap-3 px-4 py-3 cursor-pointer" data-id="' + it.id + '" role="button" tabindex="0">' +
+            '<span class="mt-1.5 w-2 h-2 rounded-full shrink-0" style="background:' + esc(it.feed_color || '#7c3aed') + '"></span>' +
+            '<div class="min-w-0 flex-1">' +
+              '<p class="text-[15px] font-semibold leading-snug text-zinc-100 line-clamp-2">' + esc(it.title) + '</p>' +
+              '<p class="mt-1 text-xs text-zinc-500 truncate">' + esc(it.feed_title) + '</p>' +
+            '</div>' +
+            '<span class="text-[11px] text-zinc-600 shrink-0 mt-1">' + fmtTime(it.published) + '</span>' +
+          '</div></div>'
+        );
+      }).join('');
+
+      Array.prototype.forEach.call(listEl.querySelectorAll('.un-swipe'), function (rowEl) {
+        var id = parseInt(rowEl.querySelector('[data-id]').getAttribute('data-id'), 10);
+        var it = shown.find(function (x) { return x.id === id; });
+        var h = unNative.attachSwipeActions(rowEl, {
+          actions: [{
+            label: it && it.read ? 'Unread' : 'Read',
+            handler: function () { toggleRead(it, !(it && it.read)); },
+          }],
+        });
+        swipeHandles.push(h);
+      });
+
+      Array.prototype.forEach.call(listEl.querySelectorAll('[data-id]'), function (rowEl) {
+        rowEl.addEventListener('click', function () {
+          var id = parseInt(rowEl.getAttribute('data-id'), 10);
+          openArticle(shown.find(function (x) { return x.id === id; }));
+        });
+      });
+    }
+
+    async function toggleRead(it, read) {
+      if (!it) return;
+      try {
+        await api('/api/items/' + it.id + (read ? '/read' : '/unread'), { method: 'POST' });
+        it.read = read;
+        unreadTotal = Math.max(0, unreadTotal + (read ? -1 : 1));
+        if (filter === 'unread' && read) {
+          items = items.filter(function (x) { return x.id !== it.id; });
+        }
+        renderList();
+      } catch (err) { if (unNative.toast) unNative.toast(err.message); }
+    }
+
+    async function toggleBookmark(it) {
+      if (!it) return;
+      try {
+        const r = await api('/api/items/' + it.id + '/bookmark', { method: 'POST' });
+        it.bookmarked = r.bookmarked;
+        if (unNative.toast) unNative.toast(r.bookmarked ? 'Saved for later' : 'Removed from saved');
+        renderList();
+      } catch (err) { if (unNative.toast) unNative.toast(err.message); }
+    }
+
+    function openArticle(it) {
+      if (!it) return;
+      openItemId = it.id;
+      $('article-feed-dot').style.background = it.feed_color || '#7c3aed';
+      $('article-feed-name').textContent = it.feed_title || '';
+      $('article-title').textContent = it.title || 'Untitled';
+      var meta = [];
+      if (it.author) meta.push(it.author);
+      if (it.published) meta.push(new Date(it.published).toLocaleString());
+      $('article-meta').textContent = meta.join(' · ');
+      $('article-body').innerHTML = it.summary || '<p class="text-zinc-500">No preview available for this item.</p>';
+      $('article-open-link').href = it.link;
+      $('article-open-link-2').href = it.link;
+      $('article-scroll').scrollTop = 0;
+      if (!it.read) toggleRead(it, true);
+      const show = function () {
+        $('article-view').style.display = 'flex';
+      };
+      if (unNative.transition) {
+        unNative.transition(show, { type: 'push' });
+      } else {
+        show();
+      }
+    }
+
+    function closeArticle() {
+      const hide = function () {
+        $('article-view').style.display = 'none';
+      };
+      if (unNative.transition) {
+        unNative.transition(hide, { type: 'pop' });
+      } else {
+        hide();
+      }
+      openItemId = null;
+      renderList();
+    }
+
+    async function openFeeds() {
+      const show = function () {
+        $('feeds-view').style.display = 'flex';
+      };
+      if (unNative.transition) {
+        unNative.transition(show, { type: 'push' });
+      } else {
+        show();
+      }
+      await loadFeeds();
+    }
+
+    function closeFeeds() {
+      const hide = function () {
+        $('feeds-view').style.display = 'none';
+      };
+      if (unNative.transition) {
+        unNative.transition(hide, { type: 'pop' });
+      } else {
+        hide();
+      }
+    }
+
+    let feedHandles = [];
+    function detachFeedSwipes() {
+      feedHandles.forEach(function (h) { try { h.detach(); } catch (_) {} });
+      feedHandles = [];
+    }
+
+    async function loadFeeds() {
+      try {
+        const data = await api('/api/feeds');
+        const listEl = $('feed-list');
+        detachFeedSwipes();
+        if (!data.feeds.length) {
+          listEl.innerHTML = '<div class="px-4 py-6 text-center text-sm text-zinc-500">No feeds yet. Add your first one below.</div>';
+          return;
+        }
+        listEl.innerHTML = data.feeds.map(function (f) {
+          var errBadge = f.status === 'error'
+            ? '<span class="text-[10px] uppercase tracking-wide text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">error</span>' : '';
+          return (
+            '<div class="un-swipe"><div class="un-group-row flex items-center gap-3 px-4 py-3">' +
+              '<span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:' + esc(f.color) + '"></span>' +
+              '<div class="min-w-0 flex-1">' +
+                '<p class="text-[15px] font-medium truncate">' + esc(f.title) + '</p>' +
+                '<p class="text-xs text-zinc-500 truncate">' + esc(f.url) + '</p>' +
+              '</div>' +
+              errBadge +
+              '<span class="text-xs text-zinc-500 shrink-0">' + f.unread + '</span>' +
+            '</div></div>'
+          );
+        }).join('');
+        Array.prototype.forEach.call(listEl.querySelectorAll('.un-swipe'), function (rowEl, idx) {
+          var feed = data.feeds[idx];
+          var h = unNative.attachSwipeActions(rowEl, {
+            actions: [
+              { label: 'Remove', destructive: true, handler: function () { removeFeed(feed); } },
+            ],
+          });
+          feedHandles.push(h);
+        });
+      } catch (err) { if (unNative.toast) unNative.toast(err.message); }
+    }
+
+    async function removeFeed(feed) {
+      try {
+        await api('/api/feeds/' + feed.id, { method: 'DELETE' });
+        if (unNative.toast) unNative.toast('Feed removed');
+        await loadFeeds();
+        await loadItems();
+      } catch (err) { if (unNative.toast) unNative.toast(err.message); }
+    }
+
+    async function refreshAllFeeds() {
+      const icon = $('feeds-refresh-icon');
+      icon.classList.add('animate-spin');
+      try {
+        const data = await api('/api/feeds');
+        for (const f of data.feeds) {
+          await api('/api/feeds/' + f.id + '/refresh', { method: 'POST' });
+        }
+        await loadFeeds();
+        await loadItems();
+        if (unNative.toast) unNative.toast('Feeds refreshed');
+      } catch (err) { if (unNative.toast) unNative.toast(err.message); }
+      icon.classList.remove('animate-spin');
+    }
+
+    function presentAddSheet() {
+      $('add-feed-input').value = '';
+      $('add-feed-error').textContent = '';
+      const contentEl = $('add-sheet-content');
+      contentEl.classList.remove('hidden');
+      let sheet = null;
+      if (unNative.presentSheet) {
+        sheet = unNative.presentSheet({
+          contentEl: contentEl,
+          onDismiss: function () { contentEl.classList.add('hidden'); },
+        });
+      }
+      $('add-feed-submit').onclick = async function () {
+        const url = $('add-feed-input').value.trim();
+        if (!url) { $('add-feed-error').textContent = 'Paste a feed URL first.'; return; }
+        $('add-feed-submit').disabled = true;
+        $('add-feed-error').textContent = '';
+        try {
+          const r = await api('/api/feeds', { method: 'POST', body: { url: url } });
+          if (sheet) sheet.dismiss();
+          if (unNative.toast) unNative.toast(r.warning ? 'Feed saved, but it could not be read' : 'Feed added');
+          await loadItems();
+        } catch (err) {
+          $('add-feed-error').textContent = err.message;
+        }
+        $('add-feed-submit').disabled = false;
+      };
+      setTimeout(function () { $('add-feed-input').focus({ preventScroll: true }); }, 350);
+    }
+
+    async function loadItems() {
+      try {
+        const data = await api('/api/items?filter=all&limit=300');
+        items = data.items || [];
+        unreadTotal = data.unreadTotal || 0;
+        renderList();
+      } catch (err) {
+        if (unNative.toast) unNative.toast(err.message);
+      }
+    }
+
+    $('seg-unread').addEventListener('click', function () { setFilter('unread'); });
+    $('seg-all').addEventListener('click', function () { setFilter('all'); });
+    $('add-btn').addEventListener('click', presentAddSheet);
+    $('feeds-add-btn').addEventListener('click', presentAddSheet);
+    $('article-back').addEventListener('click', closeArticle);
+    $('feeds-btn').addEventListener('click', openFeeds);
+    $('feeds-back').addEventListener('click', closeFeeds);
+    $('feeds-refresh-all').addEventListener('click', refreshAllFeeds);
+
+    if (unNative.attachPullToRefresh) {
+      unNative.attachPullToRefresh(listScroll, async function () {
+        const data = await api('/api/feeds');
+        for (const f of data.feeds) {
+          await api('/api/feeds/' + f.id + '/refresh', { method: 'POST' });
+        }
+        await loadItems();
+      });
+    }
+
+    setFilter(filter);
+    loadItems();
+
+    // Testing deep links: let a review URL open a screen directly.
+    // Pure UI state only; no data is written here.
+    (function () {
+      var view = params.get('view');
+      var demo = params.get('demo');
+      if (view === 'feeds') {
+        setTimeout(function () { openFeeds(); }, 250);
+      } else if (demo === 'article') {
+        setTimeout(function () {
+          openArticle({
+            id: 0,
+            link: 'https://example.com/staging-demo-article',
+            title: 'Staging demo article',
+            feed_title: 'Staging demo feed',
+            feed_color: '#0ea5e9',
+            published: new Date().toISOString(),
+            summary: '<p>This is a seeded preview of the inline article view. It exists only when the URL has demo=article.</p>',
+          });
+        }, 250);
+      }
+    })();
   </script>
 </body>
 </html>

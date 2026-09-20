@@ -1,3 +1,29 @@
 {
-  "secrets": []
+  "secrets": [],
+  "tests": [
+    {
+      "id": "rss.main-list",
+      "name": "Item list renders",
+      "path": "/",
+      "expectSelector": "#item-list",
+      "visual": true,
+      "impact": ["public/index.html", "server.js", "styles/tailwind-input.css"]
+    },
+    {
+      "id": "rss.feeds-screen",
+      "name": "Feeds screen renders",
+      "path": "/?view=feeds",
+      "expectSelector": "#feed-list",
+      "visual": true,
+      "impact": ["public/index.html", "server.js"]
+    },
+    {
+      "id": "rss.article-view",
+      "name": "Article preview renders",
+      "path": "/?demo=article",
+      "expectSelector": "#article-view",
+      "visual": true,
+      "impact": ["public/index.html", "server.js"]
+    }
+  ]
 }

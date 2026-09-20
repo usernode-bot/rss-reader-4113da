@@ -60,11 +60,21 @@ tables you've marked private), etc.
 
 ## About RSS Reader
 
-_(add a sentence or two of product context here so Claude Code has a
-shared understanding of what this app is for)_
+The app replaces Feedly's reading flow for its owner: a private per-user list
+of RSS feeds, scrolled as one flat unread/all stream, with an inline article
+preview and an open-in-browser link per item. Keep the reading UI
+mobile-native (the platform's `usernode-native` kit) and Feedly-like; don't
+reintroduce per-feed folders or settings screens unless asked.
 
 ## App-specific conventions
 
-_(optional — e.g. "all currency values stored as integer cents, not
-floats"; "the `posts` table is append-only"; "avoid adding new
-dependencies"; etc.)_
+- `feeds` and `items` are `staging:private`. Staging boot seeds fake rows
+  (user 900001, "Staging demo ...") and the staging auth middleware maps an
+  unauthenticated request to that same demo id so previews render; production
+  never does this and requires a verified iframe token on every API call.
+- Item read state lives on `items.read`; "Unread" is just a client-side filter
+  over that flag. Keep a single flat stream (no per-feed sub-screens) for the
+  reading flow.
+- Feed URLs are normalized (https assumed) and unique per user
+  (`feeds_user_id_url_key`). Adding a feed immediately fetches and stores its
+  items; failures mark the feed `status='error'` with `last_error` text.
