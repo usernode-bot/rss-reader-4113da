@@ -121,34 +121,69 @@ function titleFromHtml(html) {
   return m ? stripHtml(m[1]) : '';
 }
 
+// Decode the handful of entities feed content uses inside attributes, so an
+// extracted src like "a.jpg?u=1&amp;v=2" still resolves to the real URL.
+function decodeEntities(s) {
+  return String(s)
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&');
+}
+
+// Candidates ending in an obvious non-image file extension are media
+// attachments (podcasts, video, documents), not photos for a card.
+const NON_IMAGE_EXT = /\.(mp3|m4a|aac|ogg|oga|wav|flac|mp4|m4v|mov|avi|mkv|webm|pdf|zip|gz|tar|doc|docx|xls|xlsx|ppt|pptx)(?:[?#]|$)/i;
+
+// True when a candidate is clearly not a photo: a declared non-image type
+// (enclosure), or a URL ending in an obvious non-image file extension.
+function isNonImage(url, type) {
+  if (type && !/^image\//i.test(String(type))) return true;
+  return NON_IMAGE_EXT.test(String(url));
+}
+
 // Pull the most specific image for an item: the enclosure, media tags, then
-// the first <img> in the content. Only http(s) URLs are accepted.
-function extractThumb(p) {
+// the first <img> in the content. Only http(s) URLs are accepted; relative
+// ones resolve against the item's link (or the feed URL), and an https
+// candidate always beats an http one since the app renders in an https
+// iframe where plain-http images would be mixed-content blocked.
+function extractThumb(p, baseUrl) {
   const candidates = [];
-  if (p.enclosure && p.enclosure.url) candidates.push(p.enclosure.url);
+  if (p.enclosure && p.enclosure.url && !isNonImage(p.enclosure.url, p.enclosure.type)) {
+    candidates.push(p.enclosure.url);
+  }
   const mediaList = Array.isArray(p['media:content'])
     ? p['media:content']
     : (p['media:content'] ? [p['media:content']] : []);
   for (const m of mediaList) {
-    if (m && m.url) candidates.push(m.url);
+    if (m && m.url && !isNonImage(m.url)) candidates.push(m.url);
     const nested = m && m['media:thumbnail'];
     const nestedList = Array.isArray(nested) ? nested : (nested ? [nested] : []);
-    for (const t of nestedList) { if (t && t.url) candidates.push(t.url); }
+    for (const t of nestedList) {
+      if (t && t.url && !isNonImage(t.url)) candidates.push(t.url);
+    }
   }
   const thumbs = p['media:thumbnail'];
   for (const t of (Array.isArray(thumbs) ? thumbs : (thumbs ? [thumbs] : []))) {
-    if (t && t.url) candidates.push(t.url);
+    if (t && t.url && !isNonImage(t.url)) candidates.push(t.url);
   }
   const html = p['content:encoded'] || p.content || p.summary || '';
   const m = /<img[^>]+src=["']?([^"'\s>]+)/i.exec(String(html));
-  if (m) candidates.push(m[1]);
+  if (m) candidates.push(decodeEntities(m[1]));
+  let firstHttp = '';
   for (const c of candidates) {
+    let u;
     try {
-      const u = new URL(String(c).trim());
-      if (u.protocol === 'https:' || u.protocol === 'http:') return u.href;
-    } catch {}
+      u = new URL(String(c).trim(), baseUrl || undefined);
+    } catch { continue; }
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') continue;
+    if (isNonImage(u.href)) continue;
+    if (u.protocol === 'https:') return u.href;
+    if (!firstHttp) firstHttp = u.href;
   }
-  return '';
+  return firstHttp;
 }
 
 // Item summaries are stored as HTML so the article preview can show
@@ -206,7 +241,7 @@ function parseFeedMeta(parsed, url) {
   };
 }
 
-function itemFromParsed(p, feedId) {
+function itemFromParsed(p, feedId, feedUrl) {
   const link = String(p.link || '').trim();
   const title = stripHtml(p.title || '') || titleFromHtml(p['content:encoded'] || p.content || '') || 'Untitled';
   const summary = sanitizeSummary(
@@ -220,7 +255,7 @@ function itemFromParsed(p, feedId) {
     link,
     title: title.slice(0, 500),
     summary,
-    thumb_url: extractThumb(p),
+    thumb_url: extractThumb(p, link || feedUrl),
     author: stripHtml(p.creator || p.author || ''),
     published: published && !isNaN(Date.parse(published)) ? new Date(published) : null,
   };
@@ -292,8 +327,8 @@ async function seedStaging() {
     `INSERT INTO items (feed_id, user_id, guid, link, title, summary, thumb_url, published, read, bookmarked)
      SELECT f.id, f.user_id, 'staging-demo-item-' || n.n, f.url || '#item-' || n.n, 'Staging demo item ' || n.n,
             '<p>Seeded preview content for the RSS reader. This item is fake and belongs to a demo feed.</p>',
-            $1,
-            NOW() - (n.n * interval '1 hour'), n.n > 2, n.n = 4
+            CASE WHEN n.n <= 4 THEN $1 ELSE '' END,
+            NOW() - (n.n * interval '1 hour'), n.n = 6, n.n = 4
      FROM feeds f, generate_series(1, 6) AS n(n)
      WHERE f.url LIKE 'https://staging-demo.invalid/%'
      ON CONFLICT (user_id, guid) DO NOTHING`,
@@ -328,8 +363,8 @@ app.get('/api/demo-items', async (req, res) => {
         `INSERT INTO items (feed_id, user_id, guid, link, title, summary, thumb_url, published, read)
          SELECT $1, $2, 'staging-demo-user-item-' || n.n, '', 'Staging demo item ' || n.n,
                 '<p>Seeded preview content for the RSS reader. This item is fake and belongs to a demo feed.</p>',
-                $3,
-                NOW() - (n.n * interval '1 hour'), n.n > 4
+                CASE WHEN n.n <= 4 THEN $3 ELSE '' END,
+                NOW() - (n.n * interval '1 hour'), n.n = 6
          FROM generate_series(1, 6) AS n(n)
          ON CONFLICT (user_id, guid) DO NOTHING`,
         [feedRow.rows[0].id, uid2, STAGING_THUMB]
@@ -356,16 +391,18 @@ async function refreshFeed(feedRow) {
     );
     let newCount = 0;
     for (const p of (parsed.items || []).slice(0, 50)) {
-      const it = itemFromParsed(p, feedRow.id);
+      const it = itemFromParsed(p, feedRow.id, feedRow.url);
       if (!it.guid) continue;
       const inserted = await pool.query(
         `INSERT INTO items (feed_id, user_id, guid, link, title, summary, thumb_url, author, published)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-         ON CONFLICT (user_id, guid) DO NOTHING
-         RETURNING id`,
+         ON CONFLICT (user_id, guid) DO UPDATE SET thumb_url = EXCLUDED.thumb_url
+         RETURNING id, (xmax = 0) AS inserted`,
         [it.feed_id, feedRow.user_id, it.guid, it.link, it.title, it.summary, it.thumb_url, it.author, it.published]
       );
-      if (inserted.rowCount) newCount += inserted.rowCount;
+      // xmax = 0 marks the just-inserted row; an updated row keeps its id but
+      // does not count toward newCount.
+      if (inserted.rowCount && inserted.rows[0].inserted) newCount += 1;
     }
     return { ok: true, newCount };
   } catch (err) {
