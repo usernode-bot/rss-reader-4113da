@@ -7,7 +7,11 @@
       "path": "/",
       "expectSelector": "#item-list",
       "visual": true,
-      "impact": ["public/index.html", "server.js", "styles/tailwind-input.css"]
+      "impact": [
+        "public/index.html",
+        "server.js",
+        "styles/tailwind-input.css"
+      ]
     },
     {
       "id": "rss.mark-all-read",
@@ -15,7 +19,10 @@
       "path": "/?demo=1",
       "expectSelector": "#header-menu-btn",
       "visual": true,
-      "impact": ["public/index.html", "server.js"]
+      "impact": [
+        "public/index.html",
+        "server.js"
+      ]
     },
     {
       "id": "rss.item-thumbnails",
@@ -23,7 +30,21 @@
       "path": "/?demo=1",
       "expectSelector": "#item-list img",
       "visual": true,
-      "impact": ["public/index.html", "server.js"]
+      "impact": [
+        "public/index.html",
+        "server.js"
+      ]
+    },
+    {
+      "id": "rss.item-thumb-fallback",
+      "name": "Item thumbnail fallback dot renders",
+      "path": "/?demo=1",
+      "expectSelector": "#item-list .item-thumb-fallback",
+      "visual": true,
+      "impact": [
+        "public/index.html",
+        "server.js"
+      ]
     },
     {
       "id": "rss.feeds-screen",
@@ -31,7 +52,10 @@
       "path": "/?view=feeds",
       "expectSelector": "#feed-list",
       "visual": true,
-      "impact": ["public/index.html", "server.js"]
+      "impact": [
+        "public/index.html",
+        "server.js"
+      ]
     },
     {
       "id": "rss.article-view",
@@ -39,7 +63,10 @@
       "path": "/?demo=article",
       "expectSelector": "#article-view",
       "visual": true,
-      "impact": ["public/index.html", "server.js"]
+      "impact": [
+        "public/index.html",
+        "server.js"
+      ]
     }
   ]
 }
