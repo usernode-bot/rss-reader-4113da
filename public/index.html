@@ -143,6 +143,18 @@
       --ab-quote: var(--sol-base01);
       --ab-quote-border: #dfd9c6;
       --ab-pre-bg: var(--sol-base2);
+      --item-hover: #f6efdb;
+      --item-thumb-ring: #e6ddc2;
+      /* Solarized overrides for the hosted native kit's card chrome. The
+         kit's default violet/neutral surface is replaced with Solarized
+         values on :root / .dark; physics and thresholds stay stock. */
+      --un-accent: var(--sol-blue);
+      --un-accent-contrast: var(--sol-base3);
+      --un-hairline: var(--hairline);
+      --un-muted: var(--sol-base1);
+      --un-group-bg: #fcf5e3;
+      --un-action-neutral: var(--sol-base1);
+      --un-action-text: var(--sol-base03);
     }
     .dark {
       --sol-base03: #002b36;
@@ -183,6 +195,15 @@
       --ab-quote: var(--sol-base1);
       --ab-quote-border: #155a68;
       --ab-pre-bg: var(--sol-base02);
+      --item-hover: #0f4450;
+      --item-thumb-ring: #155a68;
+      --un-accent: var(--sol-blue);
+      --un-accent-contrast: #ffffff;
+      --un-hairline: var(--hairline);
+      --un-muted: var(--sol-base1);
+      --un-group-bg: #0a3d49;
+      --un-action-neutral: var(--sol-base01);
+      --un-action-text: var(--sol-base1);
     }
     .article-body { font-size: 1rem; line-height: 1.7; color: var(--ab-body); overflow-wrap: break-word; }
     .article-body p { margin: 0 0 1em; }
@@ -215,7 +236,6 @@
     <div id="article-scroll" class="flex-1 overflow-y-auto overscroll-contain">
       <div class="max-w-2xl mx-auto px-4 pt-5 pb-24">
         <div class="flex items-center gap-2 text-xs theme-muted mb-2">
-          <span id="article-feed-dot" class="w-2 h-2 rounded-full shrink-0"></span>
           <span id="article-feed-name" class="truncate"></span>
         </div>
         <h1 id="article-title" class="text-2xl font-bold leading-snug theme-heading mb-2"></h1>
@@ -417,17 +437,21 @@
         return;
       }
       listEl.innerHTML = shown.map(function (it) {
-      var readCls = it.read ? ' opacity-50' : '';
-        return (
-          '<div class="un-swipe"><div class="un-group-row' + readCls + ' flex items-start gap-3 px-4 py-3 cursor-pointer" data-id="' + it.id + '" role="button" tabindex="0">' +
+      return (
+          '<div class="un-swipe"><div class="un-group-row item-card' + (it.read ? ' read' : '') + '" data-id="' + it.id + '" role="button" tabindex="0">' +
             (it.thumb_url
-              ? '<img src="' + esc(it.thumb_url) + '" alt="" loading="lazy" referrerpolicy="no-referrer" class="w-14 h-14 rounded-xl object-cover shrink-0" onerror="this.style.display=\'none\'">'
-              : '<span class="item-thumb-fallback mt-1.5 w-2 h-2 rounded-full shrink-0" style="background:' + esc(it.feed_color || '#268bd2') + '"></span>') +
+              ? '<img src="' + esc(it.thumb_url) + '" alt="" loading="lazy" referrerpolicy="no-referrer" class="item-thumb" onerror="this.style.display=\'none\'">'
+              : '<span class="item-thumb-fallback" aria-hidden="true"></span>') +
             '<div class="min-w-0 flex-1">' +
-              '<p class="text-[15px] font-semibold leading-snug theme-heading line-clamp-2">' + esc(it.title) + '</p>' +
-              '<p class="mt-1 text-xs theme-muted truncate">' + esc(it.feed_title) + '</p>' +
+              '<p class="item-title">' + esc(it.title) + '</p>' +
+              '<p class="item-feed">' +
+                '<span class="truncate">' + esc(it.feed_title) + '</span>' +
+              '</p>' +
             '</div>' +
-            '<span class="text-[11px] theme-faint shrink-0 mt-1">' + fmtTime(it.published) + '</span>' +
+            '<span class="item-side">' +
+              '<span class="item-time">' + fmtTime(it.published) + '</span>' +
+              (it.bookmarked ? '<span class="item-saved">Saved</span>' : '') +
+            '</span>' +
           '</div></div>'
         );
       }).join('');
@@ -476,7 +500,6 @@
     function openArticle(it) {
       if (!it) return;
       openItemId = it.id;
-      $('article-feed-dot').style.background = it.feed_color || '#268bd2';
       $('article-feed-name').textContent = it.feed_title || '';
       $('article-title').textContent = it.title || 'Untitled';
       var meta = [];

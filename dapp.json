@@ -1,6 +1,6 @@
 {
   "icon": {
-    "emoji": "\ud83d\udcf0"
+    "emoji": "📰"
   },
   "secrets": [],
   "tests": [
@@ -50,8 +50,18 @@
       ]
     },
     {
+      "id": "rss.item-saved-badge",
+      "name": "Saved badge renders on bookmarked card",
+      "path": "/?demo=1",
+      "expectSelector": "#item-list .item-saved",
+      "impact": [
+        "public/index.html",
+        "server.js"
+      ]
+    },
+    {
       "id": "rss.item-thumb-fallback",
-      "name": "Item thumbnail fallback dot renders",
+      "name": "Neutral thumbnail fallback renders on thumbless card",
       "path": "/?demo=1",
       "expectSelector": "#item-list .item-thumb-fallback",
       "visual": true,
@@ -112,6 +122,16 @@
       "impact": [
         "public/index.html",
         "styles/tailwind-input.css",
+        "server.js"
+      ]
+    },
+    {
+      "id": "rss.staging-default-list",
+      "name": "Default staging route shows seeded articles",
+      "path": "/",
+      "expectText": "The quiet return of the personal homepage",
+      "impact": [
+        "public/index.html",
         "server.js"
       ]
     }
