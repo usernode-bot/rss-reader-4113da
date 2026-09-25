@@ -61,9 +61,9 @@
     },
     {
       "id": "rss.item-thumb-fallback",
-      "name": "Item thumbnail fallback dot renders",
+      "name": "Neutral thumbnail fallback renders on thumbless card",
       "path": "/?demo=1",
-      "expectSelector": "#item-list .item-feed-dot",
+      "expectSelector": "#item-list .item-thumb-fallback",
       "visual": true,
       "impact": [
         "public/index.html",

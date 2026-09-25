@@ -442,16 +442,10 @@
           '<div class="un-swipe"><div class="un-group-row item-card' + (it.read ? ' read' : '') + '" data-id="' + it.id + '" role="button" tabindex="0">' +
             (it.thumb_url
               ? '<img src="' + esc(it.thumb_url) + '" alt="" loading="lazy" referrerpolicy="no-referrer" class="item-thumb" onerror="this.style.display=\'none\'">'
-              : '<span class="item-feed-dot mt-2" style="background:' + esc(it.feed_color || '#268bd2') + '"></span>') +
+              : '<span class="item-thumb-fallback" aria-hidden="true"></span>') +
             '<div class="min-w-0 flex-1">' +
               '<p class="item-title">' + esc(it.title) + '</p>' +
               '<p class="item-feed">' +
-                // One feed-colored dot per card: the subtitle dot renders only
-                // on thumbnail cards. Thumbless cards already show the dot as
-                // the thumbnail fallback in the leading slot.
-                (it.thumb_url
-                  ? '<span class="item-feed-dot" style="background:' + esc(it.feed_color || '#268bd2') + '"></span>'
-                  : '') +
                 '<span class="truncate">' + esc(it.feed_title) + '</span>' +
               '</p>' +
             '</div>' +
