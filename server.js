@@ -363,7 +363,7 @@ app.get('/api/demo-items', async (req, res) => {
         `INSERT INTO items (feed_id, user_id, guid, link, title, summary, thumb_url, published, read)
          SELECT $1, $2, 'staging-demo-user-item-' || n.n, '', 'Staging demo item ' || n.n,
                 '<p>Seeded preview content for the RSS reader. This item is fake and belongs to a demo feed.</p>',
-                CASE WHEN n.n <= 4 THEN $3 ELSE '' END,
+                CASE WHEN n.n <= 3 THEN $3 ELSE '' END,
                 NOW() - (n.n * interval '1 hour'), n.n >= 5
          FROM generate_series(1, 6) AS n(n)
          ON CONFLICT (user_id, guid) DO NOTHING`,
