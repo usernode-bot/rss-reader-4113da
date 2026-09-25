@@ -220,7 +220,8 @@ function faviconOf(url) {
   } catch { return ''; }
 }
 
-const FEED_COLORS = ['#7c3aed', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
+// Solarized accent set for per-feed dots.
+const FEED_COLORS = ['#268bd2', '#2aa198', '#859900', '#b58900', '#cb4b16', '#dc322f', '#d33682', '#6c71c4'];
 
 async function fetchParsedFeed(url) {
   const text = await fetchText(url, 15000);
@@ -275,7 +276,7 @@ const BOOT_SQL = `
     description TEXT NOT NULL DEFAULT '',
     site_url TEXT NOT NULL DEFAULT '',
     icon_url TEXT NOT NULL DEFAULT '',
-    color TEXT NOT NULL DEFAULT '#7c3aed',
+    color TEXT NOT NULL DEFAULT '#268bd2',
     status TEXT NOT NULL DEFAULT 'ok',
     last_error TEXT NOT NULL DEFAULT '',
     last_fetched TIMESTAMPTZ,
@@ -310,8 +311,8 @@ async function ensureSchema() {
 async function seedStaging() {
   if (!IS_STAGING) return;
   const demoFeeds = [
-    ['https://staging-demo.invalid/krios.xml', '#0ea5e9', 'Staging demo feed Krios'],
-    ['https://staging-demo.invalid/hawley.xml', '#f59e0b', 'Staging demo feed Hawley'],
+    ['https://staging-demo.invalid/krios.xml', '#268bd2', 'Staging demo feed Krios'],
+    ['https://staging-demo.invalid/hawley.xml', '#b58900', 'Staging demo feed Hawley'],
   ];
   for (const [url, color, title] of demoFeeds) {
     await pool.query(
@@ -611,11 +612,12 @@ app.get('*', (req, res) => {
       return res.redirect(302, PLATFORM_ORIGIN + '/app/rss-reader-4113da/full' + deepPath);
     }
     return res.status(401).send(`<!doctype html><meta charset=utf-8><title>Open in Homeroom</title>
-<body style="font-family:system-ui;background:#09090b;color:#e4e4e7;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0">
+<body style="font-family:system-ui;background:#fdf6e3;color:#657b83;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0">
   <div style="max-width:24rem;padding:2rem;text-align:center">
     <h1 style="font-size:1.25rem;margin:0 0 0.5rem">Open this app inside Homeroom</h1>
-    <p style="color:#a1a1aa;font-size:0.9rem;margin:0 0 1.25rem">This page is served via the platform; direct visits aren't authenticated.</p>
-    <a href="${PLATFORM_ORIGIN}/app/rss-reader-4113da/full${deepPath}" style="display:inline-block;padding:0.5rem 1rem;background:#7c3aed;color:white;border-radius:0.5rem;text-decoration:none;font-size:0.9rem">Open in Homeroom</a>
+    <h1 style="font-size:1.25rem;margin:0 0 0.5rem;color:#586e75">Open this app inside Homeroom</h1>
+    <p style="font-size:0.9rem;margin:0 0 1.25rem">This page is served via the platform; direct visits aren't authenticated.</p>
+    <a href="${PLATFORM_ORIGIN}/app/rss-reader-4113da/full${deepPath}" style="display:inline-block;padding:0.5rem 1rem;background:#268bd2;color:#fdf6e3;border-radius:0.5rem;text-decoration:none;font-size:0.9rem">Open in Homeroom</a>
   </div>
 </body>`);
   }
