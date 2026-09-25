@@ -176,10 +176,10 @@
             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
           </button>
           <div class="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 min-w-0 max-w-full">
-            <div id="filter-chips" class="flex items-center p-0.5 rounded-full bg-zinc-200/70 dark:bg-zinc-900 text-[15px] font-semibold" role="tablist" aria-label="Filter items">
-              <button id="chip-all" class="seg-inactive px-3 py-0.5 rounded-full transition-colors" role="tab" aria-selected="false">All</button>
-              <button id="chip-unread" class="seg-active px-3 py-0.5 rounded-full transition-colors" role="tab" aria-selected="true">Unread</button>
-            </div>
+            <button id="filter-dropdown-btn" class="seg-active flex items-center gap-1 px-3 py-1 rounded-full text-[15px] font-semibold" aria-label="Filter items" aria-haspopup="menu">
+              <span id="filter-dropdown-label">Unread</span>
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
             <span id="unread-badge" class="shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full bg-violet-600/10 text-violet-700 dark:bg-violet-600/20 dark:text-violet-300">0</span>
           </div>
           <button id="header-menu-btn" class="ml-auto un-touch-target w-11 h-11 flex items-center justify-center text-violet-600 dark:text-violet-400" aria-label="More actions" aria-haspopup="menu">
@@ -283,16 +283,10 @@
 
     function setFilter(next) {
       // One flat stream: Unread shows only unread items, All shows
-      // everything. The chip choice is remembered across visits.
+      // everything. The dropdown choice is remembered across visits.
       filter = next;
       try { localStorage.setItem('rss-filter', next); } catch (_) {}
-      var isAll = filter === 'all';
-      var allBtn = $('chip-all');
-      var unreadBtn = $('chip-unread');
-      allBtn.className = isAll ? 'seg-active px-3 py-0.5 rounded-full transition-colors' : 'seg-inactive px-3 py-0.5 rounded-full transition-colors';
-      unreadBtn.className = isAll ? 'seg-inactive px-3 py-0.5 rounded-full transition-colors' : 'seg-active px-3 py-0.5 rounded-full transition-colors';
-      allBtn.setAttribute('aria-selected', isAll ? 'true' : 'false');
-      unreadBtn.setAttribute('aria-selected', isAll ? 'false' : 'true');
+      $('filter-dropdown-label').textContent = filter === 'unread' ? 'Unread' : 'All';
       renderList();
     }
 
@@ -628,8 +622,17 @@
     $('feeds-back').addEventListener('click', closeFeeds);
     $('feeds-refresh-all').addEventListener('click', refreshAllFeeds);
     $('header-menu-btn').addEventListener('click', presentHeaderMenu);
-    $('chip-all').addEventListener('click', function () { setFilter('all'); });
-    $('chip-unread').addEventListener('click', function () { setFilter('unread'); });
+    $('filter-dropdown-btn').addEventListener('click', function () {
+      if (!unNative.menu) return;
+      unNative.menu({
+        anchorEl: $('filter-dropdown-btn'),
+        placement: 'bottom-start',
+        items: [
+          { label: 'All', handler: function () { setFilter('all'); } },
+          { label: 'Unread', handler: function () { setFilter('unread'); } },
+        ],
+      });
+    });
 
     if (unNative.attachPullToRefresh) {
       unNative.attachPullToRefresh(listScroll, async function () {

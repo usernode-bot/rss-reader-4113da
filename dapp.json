@@ -73,9 +73,9 @@
     },
     {
       "id": "rss.filter-chips",
-      "name": "Filter chips render with Unread default",
+      "name": "Filter dropdown renders with Unread default",
       "path": "/?view=unread&demo=1",
-      "expectSelector": "#chip-unread.seg-active",
+      "expectSelector": "#filter-dropdown-btn",
       "visual": true,
       "impact": [
         "public/index.html",
