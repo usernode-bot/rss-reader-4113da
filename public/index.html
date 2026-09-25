@@ -446,7 +446,12 @@
             '<div class="min-w-0 flex-1">' +
               '<p class="item-title">' + esc(it.title) + '</p>' +
               '<p class="item-feed">' +
-                '<span class="item-feed-dot" style="background:' + esc(it.feed_color || '#268bd2') + '"></span>' +
+                // One feed-colored dot per card: the subtitle dot renders only
+                // on thumbnail cards. Thumbless cards already show the dot as
+                // the thumbnail fallback in the leading slot.
+                (it.thumb_url
+                  ? '<span class="item-feed-dot" style="background:' + esc(it.feed_color || '#268bd2') + '"></span>'
+                  : '') +
                 '<span class="truncate">' + esc(it.feed_title) + '</span>' +
               '</p>' +
             '</div>' +
