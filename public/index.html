@@ -171,7 +171,7 @@
   <main id="main-view" class="h-full flex flex-col">
     <div class="un-navbar un-safe-top" style="padding-left:0.5rem;padding-right:0.5rem;">
       <div class="w-full">
-        <div class="flex items-center w-full gap-1">
+        <div class="flex items-center justify-between w-full gap-1">
           <button id="feeds-btn" class="un-touch-target w-11 h-11 flex items-center justify-center text-violet-600 dark:text-violet-400" aria-label="Feeds">
             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
           </button>
@@ -180,8 +180,8 @@
               <span id="filter-dropdown-label">Unread</span>
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
             </button>
-            <span id="unread-badge" class="shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full bg-violet-600/10 text-violet-700 dark:bg-violet-600/20 dark:text-violet-300">0</span>
           </div>
+          <div id="header-status" class="absolute left-1/2 -translate-x-1/2 top-full -mt-0.5 text-[11px] leading-none text-zinc-500 dark:text-zinc-600 whitespace-nowrap pointer-events-none" aria-hidden="true"></div>
           <button id="header-menu-btn" class="ml-auto un-touch-target w-11 h-11 flex items-center justify-center text-violet-600 dark:text-violet-400" aria-label="More actions" aria-haspopup="menu">
             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
           </button>
@@ -189,7 +189,7 @@
       </div>
     </div>
 
-    <div id="list-scroll" class="flex-1 overflow-y-auto overscroll-contain pt-[64px]">
+    <div id="list-scroll" class="flex-1 overflow-y-auto overscroll-contain pt-16">
       <div id="empty-state" class="hidden flex-col items-center justify-center text-center px-8 pt-24 gap-3">
         <svg class="w-12 h-12 text-zinc-300 dark:text-zinc-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
         <p id="empty-title" class="text-zinc-600 dark:text-zinc-300 font-medium">You're all caught up</p>
@@ -255,6 +255,7 @@
 
     let items = [];
     let unreadTotal = 0;
+    let readTotal = 0;
     let filter = localStorage.getItem('rss-filter') === 'all' ? 'all' : 'unread';
     let openItemId = null;
     let swipeHandles = [];
@@ -331,8 +332,19 @@
       const shown = filter === 'all' ? items : unread;
       const caughtUp = filter === 'unread' && unread.length === 0 && read.length > 0;
       const isEmpty = !shown.length && !caughtUp;
-      $('unread-badge').textContent = String(unreadTotal || 0);
-      $('unread-badge').classList.toggle('hidden', !(unreadTotal > 0));
+      var statusEl = $('header-status');
+      // "x unread, 4 already read" next to the header title, so the count
+      // reads as part of the headline rather than a detached pill.
+      var label = unreadTotal + ' unread, ' + readTotal + ' already read';
+      statusEl.textContent = label;
+      statusEl.classList.toggle('hidden', readTotal === 0);
+      if (readTotal > 0) {
+        statusEl.textContent = unreadTotal + ' unread, ' + readTotal + ' already read';
+        statusEl.classList.remove('hidden');
+      } else {
+        statusEl.textContent = '';
+        statusEl.classList.add('hidden');
+      }
       $('empty-state').className = isEmpty ? 'flex flex-col items-center justify-center text-center px-8 pt-24 gap-3' : 'hidden';
       if (isEmpty) {
         $('empty-title').textContent = caughtUp ? "You're all caught up" : 'No items yet';
@@ -384,6 +396,7 @@
         await api('/api/items/' + it.id + (read ? '/read' : '/unread'), { method: 'POST' });
         it.read = read;
         unreadTotal = Math.max(0, unreadTotal + (read ? -1 : 1));
+        readTotal = Math.max(0, readTotal + (read ? 1 : -1));
         renderList();
       } catch (err) { if (unNative.toast) unNative.toast(err.message); }
     }
@@ -602,6 +615,7 @@
         const data = await api('/api/items?filter=all&limit=300');
         items = data.items || [];
         unreadTotal = data.unreadTotal || 0;
+        readTotal = data.readTotal || 0;
         renderList();
       } catch (err) {
         if (unNative.toast) unNative.toast(err.message);

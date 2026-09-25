@@ -28,6 +28,17 @@
       ]
     },
     {
+      "id": "rss.header-status",
+      "name": "Header status line renders next to title",
+      "path": "/?demo=1",
+      "expectSelector": "#header-status",
+      "visual": true,
+      "impact": [
+        "public/index.html",
+        "server.js"
+      ]
+    },
+    {
       "id": "rss.item-thumbnails",
       "name": "Item thumbnails render",
       "path": "/?demo=1",
@@ -75,7 +86,7 @@
       "id": "rss.filter-chips",
       "name": "Filter dropdown renders with Unread default",
       "path": "/?view=unread&demo=1",
-      "expectSelector": "#filter-dropdown-btn",
+      "expectSelector": "#header-status",
       "visual": true,
       "impact": [
         "public/index.html",

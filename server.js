@@ -329,10 +329,21 @@ async function seedStaging() {
             '<p>Seeded preview content for the RSS reader. This item is fake and belongs to a demo feed.</p>',
             CASE WHEN n.n <= 4 THEN $1 ELSE '' END,
             NOW() - (n.n * interval '1 hour'), n.n = 6, n.n = 4
-     FROM feeds f, generate_series(1, 6) AS n(n)
-     WHERE f.url LIKE 'https://staging-demo.invalid/%'
-     ON CONFLICT (user_id, guid) DO NOTHING`,
+    FROM feeds f, generate_series(1, 6) AS n(n)
+    WHERE f.url LIKE 'https://staging-demo.invalid/%'
+    ON CONFLICT (user_id, guid) DO NOTHING`,
     [STAGING_THUMB]
+  );
+  // One read item so the header status line ("1 unread, 1 already read")
+  // has something to show in previews. Idempotent: the guid is fixed.
+  await pool.query(
+    `INSERT INTO items (feed_id, user_id, guid, link, title, summary, published, read)
+     SELECT f.id, f.user_id, 'staging-demo-read-item', f.url || '#read', 'Staging demo read item',
+            '<p>Seeded preview content for the RSS reader. This item is fake and was already read.</p>',
+            NOW() - interval '30 minutes', TRUE
+     FROM feeds f
+     WHERE f.url = 'https://staging-demo.invalid/krios.xml'
+     ON CONFLICT (user_id, guid) DO NOTHING`,
   );
   if (rows.length) console.log('[staging] seeded demo feeds/items');
 }
@@ -366,8 +377,17 @@ app.get('/api/demo-items', async (req, res) => {
                 CASE WHEN n.n <= 3 THEN $3 ELSE '' END,
                 NOW() - (n.n * interval '1 hour'), n.n >= 5
          FROM generate_series(1, 6) AS n(n)
-         ON CONFLICT (user_id, guid) DO NOTHING`,
+        ON CONFLICT (user_id, guid) DO NOTHING`,
         [feedRow.rows[0].id, uid2, STAGING_THUMB]
+      );
+      // One read item so the header status line has something to show.
+      await pool.query(
+        `INSERT INTO items (feed_id, user_id, guid, link, title, summary, published, read)
+         SELECT $1, $2, 'staging-demo-user-read-item', '', 'Staging demo read item',
+                '<p>Seeded preview content for the RSS reader. This item is fake and was already read.</p>',
+                NOW() - interval '30 minutes', TRUE
+         ON CONFLICT (user_id, guid) DO NOTHING`,
+        [feedRow.rows[0].id, uid2]
       );
     }
     return res.json({ seeded: true });
@@ -516,10 +536,17 @@ app.get('/api/items', async (req, res) => {
       [req.user.id, filter, limit]
     );
     const countRow = await pool.query(
-      `SELECT COUNT(*)::int AS unread FROM items WHERE user_id = $1 AND read = FALSE`,
+      `SELECT
+         COUNT(*) FILTER (WHERE read = FALSE)::int AS unread,
+         COUNT(*) FILTER (WHERE read = TRUE)::int AS read
+       FROM items WHERE user_id = $1`,
       [req.user.id]
     );
-    res.json({ items: rows, unreadTotal: countRow.rows[0].unread });
+    res.json({
+      items: rows,
+      unreadTotal: countRow.rows[0].unread,
+      readTotal: countRow.rows[0].read,
+    });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
