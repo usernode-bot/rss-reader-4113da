@@ -1,25 +1,25 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>RSS Reader</title>
-  <meta name="theme-color" content="#f4f4f5">
+  <meta name="theme-color" content="#eee8d5">
 
-  <!-- Theme bootstrap (runs before the first paint): the resolved OS or
-       platform-frame colour scheme is the default, and a mode the user
-       picked in-app ("light" / "dark") is persisted over it. The theme
-       token and the bridge's setAppearance call below keep the platform
-       bar and cold-launch screen in sync with this page. -->
+  <!-- Theme bootstrap (runs before the first paint): the platform theme
+       state is ?theme=light|dark when the shell forwards it, otherwise
+       the OS/iframe colour scheme, otherwise light. Any earlier saved
+       mode key is ignored, so the app always tracks the platform. -->
   <script>
     (function () {
       try {
-        var KEY = 'rss-theme-mode';
-        var mode = localStorage.getItem(KEY);
-        var dark = mode === 'dark' || (mode !== 'light' &&
-          window.matchMedia('(prefers-color-scheme: dark)').matches);
+        var requested = null;
+        try { requested = new URLSearchParams(window.location.search).get('theme'); } catch (_) {}
+        var dark = requested === 'dark' || (requested !== 'light' &&
+          (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches));
         document.documentElement.classList.toggle('dark', dark);
         document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
       } catch (_) {}
     })();
   </script>
@@ -101,29 +101,88 @@
       -webkit-tap-highlight-color: transparent;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
-    /* App palette, driven by the html.dark class (platform-native kit
-       convention: tokens on :root / .dark, never forked kit CSS). */
+    /* App palette: Solarized, driven by the html.dark class (the
+       platform-native kit convention: tokens on :root / .dark, never
+       forked kit CSS). Dark mode is base03-toned, light mode is base3. */
     :root {
-      --ab-body: #3f3f46;
-      --ab-heading: #18181b;
-      --ab-accent: #7c3aed;
-      --ab-quote: #52525b;
-      --ab-quote-border: #e4e4e7;
-      --ab-pre-bg: #f4f4f5;
-      --seg-active-bg: #e4e4e7;
-      --seg-active-fg: #18181b;
-      --seg-inactive-fg: #71717a;
+      --sol-base03: #002b36;
+      --sol-base02: #073642;
+      --sol-base01: #586e75;
+      --sol-base00: #657b83;
+      --sol-base0: #839496;
+      --sol-base1: #93a1a1;
+      --sol-base2: #eee8d5;
+      --sol-base3: #fdf6e3;
+      --sol-yellow: #b58900;
+      --sol-orange: #cb4b16;
+      --sol-red: #dc322f;
+      --sol-magenta: #d33682;
+      --sol-violet: #6c71c4;
+      --sol-blue: #268bd2;
+      --sol-cyan: #2aa198;
+      --sol-green: #859900;
+      --bg: var(--sol-base3);
+      --surface: #ffffff;
+      --text: var(--sol-base00);
+      --heading: var(--sol-base01);
+      --muted: var(--sol-base1);
+      --faint: var(--sol-base1);
+      --hairline: #e8e0cb;
+      --accent: var(--sol-blue);
+      --accent-soft: #dce8f2;
+      --on-accent: var(--sol-base3);
+      --warn-bg: #f5ecdd;
+      --warn-fg: var(--sol-orange);
+      --error: var(--sol-red);
+      --seg-active-bg: #e4ddca;
+      --seg-active-fg: var(--sol-base01);
+      --seg-inactive-fg: var(--sol-base00);
+      --ab-body: var(--sol-base00);
+      --ab-heading: var(--sol-base01);
+      --ab-accent: var(--sol-blue);
+      --ab-quote: var(--sol-base01);
+      --ab-quote-border: #dfd9c6;
+      --ab-pre-bg: var(--sol-base2);
     }
     .dark {
-      --ab-body: #d4d4d8;
-      --ab-heading: #fafafa;
-      --ab-accent: #8b5cf6;
-      --ab-quote: #a1a1aa;
-      --ab-quote-border: #3f3f46;
-      --ab-pre-bg: #18181b;
-      --seg-active-bg: #27272a;
-      --seg-active-fg: #fafafa;
-      --seg-inactive-fg: #a1a1aa;
+      --sol-base03: #002b36;
+      --sol-base02: #073642;
+      --sol-base01: #586e75;
+      --sol-base00: #657b83;
+      --sol-base0: #839496;
+      --sol-base1: #93a1a1;
+      --sol-base2: #eee8d5;
+      --sol-base3: #fdf6e3;
+      --sol-yellow: #b58900;
+      --sol-orange: #cb4b16;
+      --sol-red: #dc322f;
+      --sol-magenta: #d33682;
+      --sol-violet: #6c71c4;
+      --sol-blue: #268bd2;
+      --sol-cyan: #2aa198;
+      --sol-green: #859900;
+      --bg: var(--sol-base03);
+      --surface: var(--sol-base02);
+      --text: var(--sol-base0);
+      --heading: var(--sol-base1);
+      --muted: var(--sol-base1);
+      --faint: var(--sol-base01);
+      --hairline: #0f4450;
+      --accent: var(--sol-blue);
+      --accent-soft: #10414f;
+      --on-accent: #ffffff;
+      --warn-bg: #143b44;
+      --warn-fg: var(--sol-yellow);
+      --error: var(--sol-red);
+      --seg-active-bg: #0f4450;
+      --seg-active-fg: var(--sol-base1);
+      --seg-inactive-fg: var(--sol-base01);
+      --ab-body: var(--sol-base0);
+      --ab-heading: var(--sol-base1);
+      --ab-accent: var(--sol-blue);
+      --ab-quote: var(--sol-base1);
+      --ab-quote-border: #155a68;
+      --ab-pre-bg: var(--sol-base02);
     }
     .article-body { font-size: 1rem; line-height: 1.7; color: var(--ab-body); overflow-wrap: break-word; }
     .article-body p { margin: 0 0 1em; }
@@ -135,32 +194,35 @@
     .article-body pre { background: var(--ab-pre-bg); border-radius: 0.5rem; padding: 0.8em; overflow-x: auto; font-size: 0.85em; }
     .seg-active { background: var(--seg-active-bg); color: var(--seg-active-fg); }
     .seg-inactive { background: transparent; color: var(--seg-inactive-fg); }
+    .article-body hr { border: 0; border-top: 1px solid var(--hairline); margin: 1.5em 0; }
+    .article-body table { border-collapse: collapse; margin: 0 0 1em; width: 100%; }
+    .article-body th, .article-body td { border: 1px solid var(--hairline); padding: 0.4em 0.6em; }
   </style>
 </head>
-<body class="bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+<body class="theme-bg theme-text">
 
   <!-- Article view, pushed over the list -->
-  <div id="article-view" class="fixed inset-0 bg-zinc-50 dark:bg-zinc-950 flex-col" style="display:none;z-index:200">
+  <div id="article-view" class="fixed inset-0 theme-bg flex-col" style="display:none;z-index:200">
     <div class="un-navbar un-safe-top flex items-center gap-2 px-2">
       <button id="article-back" class="un-navbar-back un-touch-target" aria-label="Back"></button>
       <div class="un-navbar-title text-base font-semibold truncate"></div>
       <a id="article-open-link" href="#" target="_blank" rel="noopener"
-         class="ml-auto shrink-0 inline-flex items-center gap-1.5 text-[13px] font-medium px-3 py-1.5 rounded-full bg-violet-600/10 text-violet-700 dark:bg-violet-600/20 dark:text-violet-300">
+         class="open-chip ml-auto shrink-0 inline-flex items-center gap-1.5 text-[13px] font-medium px-3 py-1.5 rounded-full">
         Open in browser
         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg>
       </a>
     </div>
     <div id="article-scroll" class="flex-1 overflow-y-auto overscroll-contain">
       <div class="max-w-2xl mx-auto px-4 pt-5 pb-24">
-        <div class="flex items-center gap-2 text-xs text-zinc-500 mb-2">
+        <div class="flex items-center gap-2 text-xs theme-muted mb-2">
           <span id="article-feed-dot" class="w-2 h-2 rounded-full shrink-0"></span>
           <span id="article-feed-name" class="truncate"></span>
         </div>
-        <h1 id="article-title" class="text-2xl font-bold leading-snug text-zinc-900 dark:text-zinc-50 mb-2"></h1>
-        <p id="article-meta" class="text-xs text-zinc-500 mb-5"></p>
+        <h1 id="article-title" class="text-2xl font-bold leading-snug theme-heading mb-2"></h1>
+        <p id="article-meta" class="text-xs theme-muted mb-5"></p>
         <div id="article-body" class="article-body"></div>
         <a id="article-open-link-2" href="#" target="_blank" rel="noopener"
-           class="mt-6 inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-violet-600 text-white text-sm font-semibold">
+           class="mt-6 inline-flex items-center gap-2 px-4 py-2.5 rounded-full theme-primary text-sm font-semibold">
           Open original in browser
         </a>
       </div>
@@ -172,7 +234,7 @@
     <div class="un-navbar un-safe-top" style="padding-left:0.5rem;padding-right:0.5rem;">
       <div class="w-full">
         <div class="flex items-center justify-between w-full gap-1">
-          <button id="feeds-btn" class="un-touch-target w-11 h-11 flex items-center justify-center text-violet-600 dark:text-violet-400" aria-label="Feeds">
+          <button id="feeds-btn" class="un-touch-target w-11 h-11 flex items-center justify-center theme-accent" aria-label="Feeds">
             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
           </button>
           <div class="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 min-w-0 max-w-full">
@@ -181,8 +243,8 @@
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
             </button>
           </div>
-          <div id="header-status" class="absolute left-1/2 -translate-x-1/2 top-full -mt-0.5 text-[11px] leading-none text-zinc-500 dark:text-zinc-600 whitespace-nowrap pointer-events-none" aria-hidden="true"></div>
-          <button id="header-menu-btn" class="ml-auto un-touch-target w-11 h-11 flex items-center justify-center text-violet-600 dark:text-violet-400" aria-label="More actions" aria-haspopup="menu">
+          <div id="header-status" class="absolute left-1/2 -translate-x-1/2 top-full -mt-0.5 text-[11px] leading-none theme-faint whitespace-nowrap pointer-events-none" aria-hidden="true"></div>
+          <button id="header-menu-btn" class="ml-auto un-touch-target w-11 h-11 flex items-center justify-center theme-accent" aria-label="More actions" aria-haspopup="menu">
             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
           </button>
         </div>
@@ -191,29 +253,29 @@
 
     <div id="list-scroll" class="flex-1 overflow-y-auto overscroll-contain pt-16">
       <div id="empty-state" class="hidden flex-col items-center justify-center text-center px-8 pt-24 gap-3">
-        <svg class="w-12 h-12 text-zinc-300 dark:text-zinc-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
-        <p id="empty-title" class="text-zinc-600 dark:text-zinc-300 font-medium">You're all caught up</p>
-        <p id="empty-hint" class="text-sm text-zinc-500">Tap + to add a feed, then new items show up here.</p>
+        <svg class="w-12 h-12 theme-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
+        <p id="empty-title" class="theme-muted font-medium">You're all caught up</p>
+        <p id="empty-hint" class="text-sm theme-muted">Tap + to add a feed, then new items show up here.</p>
       </div>
       <div id="item-list" class="un-group mx-3 mb-3 overflow-hidden"></div>
     </div>
   </main>
 
   <!-- Feeds screen, pushed over the list -->
-  <div id="feeds-view" class="fixed inset-0 bg-zinc-50 dark:bg-zinc-950 flex-col" style="display:none;z-index:200">
+  <div id="feeds-view" class="fixed inset-0 theme-bg flex-col" style="display:none;z-index:200">
     <div class="un-navbar un-safe-top flex items-center gap-2 px-2">
       <button id="feeds-back" class="un-navbar-back un-touch-target" aria-label="Back"></button>
       <div class="un-navbar-title text-base font-semibold">Your feeds</div>
       <span class="w-11 shrink-0" aria-hidden="true"></span>
-      <button id="feeds-refresh-all" class="un-touch-target w-11 h-11 flex items-center justify-center text-violet-600 dark:text-violet-400" aria-label="Refresh all feeds">
+      <button id="feeds-refresh-all" class="un-touch-target w-11 h-11 flex items-center justify-center theme-accent" aria-label="Refresh all feeds">
         <svg id="feeds-refresh-icon" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
       </button>
     </div>
     <div id="feeds-scroll" class="flex-1 overflow-y-auto overscroll-contain pt-16">
       <div class="max-w-2xl mx-auto px-4 pt-4 pb-28">
         <div id="feed-list" class="un-group overflow-hidden"></div>
-        <button id="feeds-add-btn" class="mt-4 w-full py-3 rounded-xl bg-violet-600 text-white font-semibold active:scale-[0.98]">Add a feed</button>
-        <p class="mt-3 text-xs text-zinc-500 dark:text-zinc-600 text-center">Feeds refresh when you add them and from this screen. Swipe a row left to remove it.</p>
+        <button id="feeds-add-btn" class="mt-4 w-full py-3 rounded-xl theme-primary font-semibold active:scale-[0.98]">Add a feed</button>
+        <p class="mt-3 text-xs theme-faint text-center">Feeds refresh when you add them and from this screen. Swipe a row left to remove it.</p>
       </div>
     </div>
   </div>
@@ -221,12 +283,12 @@
   <!-- Add-feed sheet content (moved into the kit's sheet when presented) -->
   <div id="add-sheet-content" class="hidden px-4 pb-2 pt-1">
     <h2 class="text-lg font-semibold mb-1">Add a feed</h2>
-    <p class="text-sm text-zinc-500 mb-3">Paste the RSS or Atom URL.</p>
+    <p class="text-sm theme-muted mb-3">Paste the RSS or Atom URL.</p>
     <input id="add-feed-input" type="url" inputmode="url" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
            placeholder="https://example.com/feed.xml"
-           class="w-full px-3.5 py-3 rounded-xl bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-600 text-[15px] outline-none ring-1 ring-zinc-300 dark:ring-zinc-800 focus:ring-violet-500">
-    <p id="add-feed-error" class="text-sm text-red-600 dark:text-red-400 mt-2 min-h-[1.25rem]"></p>
-    <button id="add-feed-submit" class="mt-1 w-full py-3 rounded-xl bg-violet-600 text-white font-semibold active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">Add feed</button>
+           class="add-feed-input w-full px-3.5 py-3 rounded-xl text-[15px] outline-none">
+    <p id="add-feed-error" class="text-sm theme-error mt-2 min-h-[1.25rem]"></p>
+    <button id="add-feed-submit" class="mt-1 w-full py-3 rounded-xl theme-primary font-semibold active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100">Add feed</button>
   </div>
 
   <script>
@@ -355,17 +417,17 @@
         return;
       }
       listEl.innerHTML = shown.map(function (it) {
-        var readCls = it.read ? ' opacity-50' : '';
+      var readCls = it.read ? ' opacity-50' : '';
         return (
           '<div class="un-swipe"><div class="un-group-row' + readCls + ' flex items-start gap-3 px-4 py-3 cursor-pointer" data-id="' + it.id + '" role="button" tabindex="0">' +
             (it.thumb_url
               ? '<img src="' + esc(it.thumb_url) + '" alt="" loading="lazy" referrerpolicy="no-referrer" class="w-14 h-14 rounded-xl object-cover shrink-0" onerror="this.style.display=\'none\'">'
-              : '<span class="item-thumb-fallback mt-1.5 w-2 h-2 rounded-full shrink-0" style="background:' + esc(it.feed_color || '#7c3aed') + '"></span>') +
+              : '<span class="item-thumb-fallback mt-1.5 w-2 h-2 rounded-full shrink-0" style="background:' + esc(it.feed_color || '#268bd2') + '"></span>') +
             '<div class="min-w-0 flex-1">' +
-              '<p class="text-[15px] font-semibold leading-snug text-zinc-900 dark:text-zinc-100 line-clamp-2">' + esc(it.title) + '</p>' +
-              '<p class="mt-1 text-xs text-zinc-500 truncate">' + esc(it.feed_title) + '</p>' +
+              '<p class="text-[15px] font-semibold leading-snug theme-heading line-clamp-2">' + esc(it.title) + '</p>' +
+              '<p class="mt-1 text-xs theme-muted truncate">' + esc(it.feed_title) + '</p>' +
             '</div>' +
-            '<span class="text-[11px] text-zinc-500 dark:text-zinc-600 shrink-0 mt-1">' + fmtTime(it.published) + '</span>' +
+            '<span class="text-[11px] theme-faint shrink-0 mt-1">' + fmtTime(it.published) + '</span>' +
           '</div></div>'
         );
       }).join('');
@@ -414,14 +476,14 @@
     function openArticle(it) {
       if (!it) return;
       openItemId = it.id;
-      $('article-feed-dot').style.background = it.feed_color || '#7c3aed';
+      $('article-feed-dot').style.background = it.feed_color || '#268bd2';
       $('article-feed-name').textContent = it.feed_title || '';
       $('article-title').textContent = it.title || 'Untitled';
       var meta = [];
       if (it.author) meta.push(it.author);
       if (it.published) meta.push(new Date(it.published).toLocaleString());
       $('article-meta').textContent = meta.join(' · ');
-      $('article-body').innerHTML = it.summary || '<p class="text-zinc-500">No preview available for this item.</p>';
+      $('article-body').innerHTML = it.summary || '<p class="theme-muted">No preview available for this item.</p>';
       $('article-open-link').href = it.link;
       $('article-open-link-2').href = it.link;
       normalizeExternalLinks($('article-body'));
@@ -490,21 +552,21 @@
         const listEl = $('feed-list');
         detachFeedSwipes();
         if (!data.feeds.length) {
-          listEl.innerHTML = '<div class="px-4 py-6 text-center text-sm text-zinc-500">No feeds yet. Add your first one below.</div>';
+          listEl.innerHTML = '<div class="px-4 py-6 text-center text-sm theme-muted">No feeds yet. Add your first one below.</div>';
           return;
         }
         listEl.innerHTML = data.feeds.map(function (f) {
           var errBadge = f.status === 'error'
-            ? '<span class="text-[10px] uppercase tracking-wide text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">error</span>' : '';
+            ? '<span class="text-[10px] uppercase tracking-wide err-badge px-1.5 py-0.5 rounded">error</span>' : '';
           return (
             '<div class="un-swipe"><div class="un-group-row flex items-center gap-3 px-4 py-3">' +
               '<span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:' + esc(f.color) + '"></span>' +
               '<div class="min-w-0 flex-1">' +
                 '<p class="text-[15px] font-medium truncate">' + esc(f.title) + '</p>' +
-                '<p class="text-xs text-zinc-500 truncate">' + esc(f.url) + '</p>' +
+                '<p class="text-xs theme-muted truncate">' + esc(f.url) + '</p>' +
               '</div>' +
               errBadge +
-              '<span class="text-xs text-zinc-500 shrink-0">' + f.unread + '</span>' +
+              '<span class="text-xs theme-muted shrink-0">' + f.unread + '</span>' +
             '</div></div>'
           );
         }).join('');
@@ -629,12 +691,17 @@
     // cold-launch screen.
     function isDark() { return document.documentElement.classList.contains('dark'); }
     function resolvedScheme() { return isDark() ? 'dark' : 'light'; }
-    function reportAppearance() {
-      const bg = getComputedStyle(document.body).backgroundColor;
-      const m = /^rgba?\((\d+), (\d+), (\d+)/.exec(bg);
-      const hex = m ? '#' + m.slice(1).map(function (n) {
+    // Solarized page grounds: base03 in dark mode, base3 in light.
+    function pageGroundHex() { return isDark() ? '#002b36' : '#fdf6e3'; }
+    function hexFromRgb(rgb) {
+      const m = /^rgba?\((\d+), (\d+), (\d+)/.exec(rgb || '');
+      return m ? '#' + m.slice(1).map(function (n) {
         return parseInt(n, 10).toString(16).padStart(2, '0');
       }).join('') : undefined;
+    }
+    function reportAppearance() {
+      const bg = getComputedStyle(document.body).backgroundColor;
+      const hex = hexFromRgb(bg) || pageGroundHex();
       try {
         // Only meaningful inside the mobile shell; the bridge rejects the
         // call with a console error elsewhere, so gate on isNative.
@@ -646,7 +713,8 @@
     }
     function syncThemeUI() {
       const meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute('content', isDark() ? '#09090b' : '#f4f4f5');
+      if (meta) meta.setAttribute('content', pageGroundHex());
+      document.documentElement.setAttribute('data-theme', isDark() ? 'dark' : 'light');
     }
     try {
       window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
@@ -718,7 +786,7 @@
             link: 'https://example.com/staging-demo-article',
             title: 'Staging demo article',
             feed_title: 'Staging demo feed',
-            feed_color: '#0ea5e9',
+            feed_color: '#2aa198',
             published: new Date().toISOString(),
             summary: '<p>This is a seeded preview of the inline article view. It exists only when the URL has demo=article.</p>',
           });
