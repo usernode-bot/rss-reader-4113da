@@ -1,5 +1,7 @@
 {
-  "icon": { "emoji": "📰" },
+  "icon": {
+    "emoji": "\ud83d\udcf0"
+  },
   "secrets": [],
   "tests": [
     {
@@ -63,6 +65,17 @@
       "name": "Article preview renders",
       "path": "/?demo=article",
       "expectSelector": "#article-view",
+      "visual": true,
+      "impact": [
+        "public/index.html",
+        "server.js"
+      ]
+    },
+    {
+      "id": "rss.filter-chips",
+      "name": "Filter chips render with Unread default",
+      "path": "/?view=unread&demo=1",
+      "expectSelector": "#chip-unread.seg-active",
       "visual": true,
       "impact": [
         "public/index.html",

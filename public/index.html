@@ -176,7 +176,10 @@
             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
           </button>
           <div class="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 min-w-0 max-w-full">
-            <div class="text-[17px] font-semibold truncate" id="list-title">Unread</div>
+            <div id="filter-chips" class="flex items-center p-0.5 rounded-full bg-zinc-200/70 dark:bg-zinc-900 text-[15px] font-semibold" role="tablist" aria-label="Filter items">
+              <button id="chip-all" class="seg-inactive px-3 py-0.5 rounded-full transition-colors" role="tab" aria-selected="false">All</button>
+              <button id="chip-unread" class="seg-active px-3 py-0.5 rounded-full transition-colors" role="tab" aria-selected="true">Unread</button>
+            </div>
             <span id="unread-badge" class="shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full bg-violet-600/10 text-violet-700 dark:bg-violet-600/20 dark:text-violet-300">0</span>
           </div>
           <button id="header-menu-btn" class="ml-auto un-touch-target w-11 h-11 flex items-center justify-center text-violet-600 dark:text-violet-400" aria-label="More actions" aria-haspopup="menu">
@@ -193,9 +196,6 @@
         <p id="empty-hint" class="text-sm text-zinc-500">Tap + to add a feed, then new items show up here.</p>
       </div>
       <div id="item-list" class="un-group mx-3 mb-3 overflow-hidden"></div>
-      <button id="show-past-btn" class="hidden mx-3 mb-3 py-2.5 rounded-xl bg-zinc-200/70 dark:bg-zinc-900 text-sm font-medium text-zinc-700 dark:text-zinc-300 active:scale-[0.98]">
-        Show past articles
-      </button>
     </div>
   </main>
 
@@ -256,7 +256,6 @@
     let items = [];
     let unreadTotal = 0;
     let filter = localStorage.getItem('rss-filter') === 'all' ? 'all' : 'unread';
-    let showPast = filter === 'all';
     let openItemId = null;
     let swipeHandles = [];
 
@@ -283,12 +282,17 @@
     }
 
     function setFilter(next) {
-      // One flat stream: unread items on top, read items below the divider
-      // once "Show past articles" is tapped (or shown automatically after
-      // reading in place). `filter` is 'unread' or 'all'.
+      // One flat stream: Unread shows only unread items, All shows
+      // everything. The chip choice is remembered across visits.
       filter = next;
       try { localStorage.setItem('rss-filter', next); } catch (_) {}
-      $('list-title').textContent = filter === 'unread' ? 'Unread' : 'All';
+      var isAll = filter === 'all';
+      var allBtn = $('chip-all');
+      var unreadBtn = $('chip-unread');
+      allBtn.className = isAll ? 'seg-active px-3 py-0.5 rounded-full transition-colors' : 'seg-inactive px-3 py-0.5 rounded-full transition-colors';
+      unreadBtn.className = isAll ? 'seg-inactive px-3 py-0.5 rounded-full transition-colors' : 'seg-active px-3 py-0.5 rounded-full transition-colors';
+      allBtn.setAttribute('aria-selected', isAll ? 'true' : 'false');
+      unreadBtn.setAttribute('aria-selected', isAll ? 'false' : 'true');
       renderList();
     }
 
@@ -302,15 +306,12 @@
       detachSwipes();
       const unread = items.filter(function (it) { return !it.read; });
       const read = items.filter(function (it) { return it.read; });
-      // In the All view everything is one list; in Unread the read items only
-      // appear when the divider is shown.
-      const pastShown = filter === 'all' || showPast;
-      const shown = pastShown ? items : unread;
-      const caughtUp = filter === 'unread' && !showPast && unread.length === 0 && read.length > 0;
+      // In the All view everything is one list; in Unread only unread items show.
+      const shown = filter === 'all' ? items : unread;
+      const caughtUp = filter === 'unread' && unread.length === 0 && read.length > 0;
       const isEmpty = !shown.length && !caughtUp;
       $('unread-badge').textContent = String(unreadTotal || 0);
       $('unread-badge').classList.toggle('hidden', !(unreadTotal > 0));
-      $('show-past-btn').classList.toggle('hidden', pastShown || !read.length);
       $('empty-state').className = isEmpty ? 'flex flex-col items-center justify-center text-center px-8 pt-24 gap-3' : 'hidden';
       if (isEmpty) {
         $('empty-title').textContent = caughtUp ? "You're all caught up" : 'No items yet';
@@ -627,10 +628,8 @@
     $('feeds-back').addEventListener('click', closeFeeds);
     $('feeds-refresh-all').addEventListener('click', refreshAllFeeds);
     $('header-menu-btn').addEventListener('click', presentHeaderMenu);
-    $('show-past-btn').addEventListener('click', function () {
-      setFilter('all');
-      $('list-scroll').scrollTo({ top: $('show-past-btn').offsetTop - 80, behavior: 'smooth' });
-    });
+    $('chip-all').addEventListener('click', function () { setFilter('all'); });
+    $('chip-unread').addEventListener('click', function () { setFilter('unread'); });
 
     if (unNative.attachPullToRefresh) {
       unNative.attachPullToRefresh(listScroll, async function () {
@@ -658,7 +657,9 @@
     (function () {
       var view = params.get('view');
       var demo = params.get('demo');
-      if (view === 'feeds') {
+      if (view === 'unread') {
+        setTimeout(function () { setFilter('unread'); }, 250);
+      } else if (view === 'feeds') {
         setTimeout(function () { openFeeds(); }, 250);
       } else if (demo === 'article') {
         setTimeout(function () {
