@@ -21,7 +21,7 @@ const APP_AUDIENCE = process.env.USERNODE_APP_ID
   ? 'usernode:app:' + process.env.USERNODE_APP_ID
   : null;
 
-const PUBLIC_API_PATHS = new Set(['/health']);
+const PUBLIC_API_PATHS = new Set(['/health', '/tailwind.css']);
 // Staging demo identity: the 900001 rows seeded at boot belong to this fake
 // id, and the same id is used when a reviewer hits the app without an
 // iframe token (a tokenless staging load). Production never takes this
@@ -363,8 +363,8 @@ app.get('/api/demo-items', async (req, res) => {
         `INSERT INTO items (feed_id, user_id, guid, link, title, summary, thumb_url, published, read)
          SELECT $1, $2, 'staging-demo-user-item-' || n.n, '', 'Staging demo item ' || n.n,
                 '<p>Seeded preview content for the RSS reader. This item is fake and belongs to a demo feed.</p>',
-                CASE WHEN n.n <= 4 THEN $3 ELSE '' END,
-                NOW() - (n.n * interval '1 hour'), n.n = 6
+                CASE WHEN n.n <= 3 THEN $3 ELSE '' END,
+                NOW() - (n.n * interval '1 hour'), n.n >= 5
          FROM generate_series(1, 6) AS n(n)
          ON CONFLICT (user_id, guid) DO NOTHING`,
         [feedRow.rows[0].id, uid2, STAGING_THUMB]
