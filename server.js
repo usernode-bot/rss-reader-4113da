@@ -29,15 +29,168 @@ const PUBLIC_API_PATHS = new Set(['/health', '/tailwind.css']);
 const STAGING_DEMO_USER_ID = 900001;
 // A tiny SVG data URI used as the thumbnail on staged items so previews can
 // exercise the thumbnail layout without any remote image.
-const STAGING_THUMB = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230ea5e9'/%3E%3Ccircle cx='32' cy='32' r='13' fill='white'/%3E%3C/svg%3E";
-// Staging-only demo data lives behind this query flag so a preview reviewer
-// can see the list populated without touching production data. Gated on
-// IS_STAGING; the plain route stays honest and returns a real user's rows.
-const DEMO_SEED_SQL = `
-  INSERT INTO feeds (user_id, url, title, description, color, status, last_error, icon_url)
-  VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-  ON CONFLICT (user_id, url) DO NOTHING
-`;
+function stagingThumb(color) {
+  const svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>" +
+    "<rect width='64' height='64' rx='12' fill='" + color + "'/>" +
+    "<circle cx='32' cy='32' r='13' fill='white'/></svg>";
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+
+// Staging-only demo corpus: three fake feeds with realistic article rows so
+// previews exercise thumbnails, authors, unread/read/saved states and time
+// formatting. Feed titles carry the "Staging demo" marker on every card, so
+// nothing can be mistaken for real user content.
+const STAGING_DEMO_FEEDS = [
+  {
+    url: 'https://staging-demo.invalid/signal-tower.xml',
+    color: '#268bd2',
+    title: 'Staging demo · Signal Tower',
+    description: 'Staging demo feed: technology essays',
+    items: [
+      {
+        slug: 'homepage',
+        title: 'The quiet return of the personal homepage',
+        author: 'Ada Marsh',
+        hoursAgo: 0.8,
+        thumb: true,
+        summary: '<p>Two decades after the feed reader supposedly died, hand-made websites are multiplying again. Hosting got cheap, publishing tools got boring in the good way, and a generation raised on timelines wants something slower.</p><p>This essay walks through three personal sites worth subscribing to, and what their authors do differently from social media.</p>',
+      },
+      {
+        slug: 'platforms',
+        title: 'What we lost when everything became a platform',
+        author: 'Ada Marsh',
+        hoursAgo: 6,
+        thumb: false,
+        summary: '<p>Every service we use began as a place and became a product. The archive shrank, the search box got an agenda, and the out-link became a liability.</p><p>A look at what a quieter web would need to give back before people return to it.</p>',
+      },
+      {
+        slug: 'renaissance',
+        title: 'A field guide to the feed reader renaissance',
+        author: '',
+        hoursAgo: 26,
+        thumb: false,
+        read: true,
+        bookmarked: true,
+        summary: '<p>Feed readers never died; they just went quiet. A new wave of readers treats syncing, filtering and archiving as table stakes and reading speed as the feature.</p><p>This survey compares six of them, from the minimalist to the power tool, and notes which ones respect your attention.</p>',
+      },
+      {
+        slug: 'local-first',
+        title: 'Local-first software is a sync problem wearing a UX costume',
+        author: 'Rex Calder',
+        hoursAgo: 96,
+        thumb: false,
+        read: true,
+        summary: '<p>CRDTs get the talks, but the hard part is what the interface does while two devices disagree. Conflict is not an error state; it is Tuesday.</p><p>Three apps that get this right show the pattern: merge visibly, version quietly, and never block the person typing.</p>',
+      },
+    ],
+  },
+  {
+    url: 'https://staging-demo.invalid/daily-ledger.xml',
+    color: '#b58900',
+    title: 'Staging demo · The Daily Ledger',
+    description: 'Staging demo feed: city briefs',
+    items: [
+      {
+        slug: 'harbor-vote',
+        title: 'Morning brief: the harbor expansion vote heads to council',
+        author: '',
+        hoursAgo: 2,
+        thumb: false,
+        summary: '<p>The planning board forwarded the harbor expansion proposal last night with two amendments and one abstention. Council takes it up Thursday.</p><p>Opponents want the traffic study reopened; supporters point at the ferry dock numbers.</p>',
+      },
+      {
+        slug: 'night-market',
+        title: 'Morning brief: the night market pilot returns this weekend',
+        author: '',
+        hoursAgo: 22,
+        thumb: false,
+        summary: '<p>After last spring\u2019s pilot drew crowds the barricades were not sized for, the night market returns with two extra blocks and a posted vendor map.</p><p>Transit runs late on both evenings; the covered bike corral moves to the library plaza.</p>',
+      },
+      {
+        slug: 'transit-map',
+        title: 'Transit map redesign enters a month of public comment',
+        author: '',
+        hoursAgo: 74,
+        thumb: true,
+        read: true,
+        summary: '<p>The proposed map trades geographic honesty for legibility, straightening every line and dropping the fare-zone shading. Riders either love it or are composing letters about it.</p><p>Comment windows run through next month at every branch library.</p>',
+      },
+      {
+        slug: 'bakery-walks',
+        title: 'Weekend edition: ten walks that end at a good bakery',
+        author: '',
+        hoursAgo: 142,
+        thumb: false,
+        read: true,
+        summary: '<p>Each route is under six kilometres and ends within sight of an oven, which the author treats as a planning constraint rather than a coincidence.</p><p>The hill routes in the northern section are rated for shade, not distance.</p>',
+      },
+    ],
+  },
+  {
+    url: 'https://staging-demo.invalid/field-notes.xml',
+    color: '#859900',
+    title: 'Staging demo · Field Notes',
+    description: 'Staging demo feed: photography and the outdoors',
+    items: [
+      {
+        slug: 'estuary-fog',
+        title: 'Fog season begins at the estuary',
+        author: 'Juno Reyes',
+        hoursAgo: 3,
+        thumb: true,
+        bookmarked: true,
+        summary: '<p>The first real fog of the season rolled in off the water at dusk, and the mudflats did their annual impression of an unfinished pencil sketch.</p><p>Notes on exposure in flat light, plus where the herons were standing when the light came back.</p>',
+      },
+      {
+        slug: 'herons',
+        title: 'Notes on photographing herons without disturbing them',
+        author: 'Juno Reyes',
+        hoursAgo: 30,
+        thumb: false,
+        summary: '<p>Herons have a personal-space radius measured in the tens of metres, and a memory for people who ignore it. The practical answer is a longer lens and less walking.</p><p>This piece covers positioning, tide timing and the two behaviours that mean you should already be backing up.</p>',
+      },
+      {
+        slug: 'cardenal-ridge',
+        title: 'A slow hike up Cardenal Ridge',
+        author: 'Juno Reyes',
+        hoursAgo: 120,
+        thumb: true,
+        read: true,
+        summary: '<p>Six hours for a route the sign claims is four, most of the surplus spent sitting still. The ridge grass was bent flat by wind for most of the climb and then simply stopped.</p><p>Trail notes: water at the saddle is unreliable this year, and the descent gully washes out before it looks like it does.</p>',
+      },
+    ],
+  },
+];
+
+// Seed the demo corpus for a user id. Boot-time seeding uses the fixed fake
+// staging identity; ?demo=1 request-time seeding uses the calling user's id.
+// Idempotent throughout: fixed guids and ON CONFLICT DO NOTHING.
+async function seedDemoData(userId) {
+  for (const feed of STAGING_DEMO_FEEDS) {
+    await pool.query(
+      `INSERT INTO feeds (user_id, url, title, description, color, status, last_error, icon_url)
+       VALUES ($1, $2, $3, $4, $5, 'ok', '', $6)
+       ON CONFLICT (user_id, url) DO NOTHING`,
+      [userId, feed.url, feed.title, feed.description, feed.color, faviconOf(feed.url)]
+    );
+    const feedRow = await pool.query(
+      `SELECT id FROM feeds WHERE user_id = $1 AND url = $2`,
+      [userId, feed.url]
+    );
+    if (!feedRow.rowCount) continue;
+    const feedId = feedRow.rows[0].id;
+    for (const it of feed.items) {
+      await pool.query(
+        `INSERT INTO items (feed_id, user_id, guid, link, title, summary, thumb_url, author, published, read, bookmarked)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW() - ($9 * interval '1 hour'), $10, $11)
+         ON CONFLICT (user_id, guid) DO NOTHING`,
+        [feedId, userId, 'staging-demo-' + it.slug, feed.url + '#item-' + it.slug,
+         it.title, it.summary, it.thumb ? stagingThumb(feed.color) : '',
+         it.author || '', it.hoursAgo, !!it.read, !!it.bookmarked]
+      );
+    }
+  }
+}
 
 app.use(express.json({ limit: '256kb' }));
 
@@ -310,43 +463,8 @@ async function ensureSchema() {
 
 async function seedStaging() {
   if (!IS_STAGING) return;
-  const demoFeeds = [
-    ['https://staging-demo.invalid/krios.xml', '#268bd2', 'Staging demo feed Krios'],
-    ['https://staging-demo.invalid/hawley.xml', '#b58900', 'Staging demo feed Hawley'],
-  ];
-  for (const [url, color, title] of demoFeeds) {
-    await pool.query(
-      `INSERT INTO feeds (user_id, url, title, description, color, status, last_error, icon_url)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       ON CONFLICT (user_id, url) DO NOTHING`,
-      [900001, url, title,
-       'Fake rows seeded for staging previews only', color, 'ok',
-       '', faviconOf(url)]
-    );
-  }
-  const { rows } = await pool.query(
-    `INSERT INTO items (feed_id, user_id, guid, link, title, summary, thumb_url, published, read, bookmarked)
-     SELECT f.id, f.user_id, 'staging-demo-item-' || n.n, f.url || '#item-' || n.n, 'Staging demo item ' || n.n,
-            '<p>Seeded preview content for the RSS reader. This item is fake and belongs to a demo feed.</p>',
-            CASE WHEN n.n <= 4 THEN $1 ELSE '' END,
-            NOW() - (n.n * interval '1 hour'), n.n = 6, n.n = 4
-    FROM feeds f, generate_series(1, 6) AS n(n)
-    WHERE f.url LIKE 'https://staging-demo.invalid/%'
-    ON CONFLICT (user_id, guid) DO NOTHING`,
-    [STAGING_THUMB]
-  );
-  // One read item so the header status line ("1 unread, 1 already read")
-  // has something to show in previews. Idempotent: the guid is fixed.
-  await pool.query(
-    `INSERT INTO items (feed_id, user_id, guid, link, title, summary, published, read)
-     SELECT f.id, f.user_id, 'staging-demo-read-item', f.url || '#read', 'Staging demo read item',
-            '<p>Seeded preview content for the RSS reader. This item is fake and was already read.</p>',
-            NOW() - interval '30 minutes', TRUE
-     FROM feeds f
-     WHERE f.url = 'https://staging-demo.invalid/krios.xml'
-     ON CONFLICT (user_id, guid) DO NOTHING`,
-  );
-  if (rows.length) console.log('[staging] seeded demo feeds/items');
+  await seedDemoData(STAGING_DEMO_USER_ID);
+  console.log('[staging] seeded demo feeds/items');
 }
 
 // Request-time demo seeding for a staging reviewer: seed a couple of demo
@@ -355,42 +473,7 @@ async function seedStaging() {
 app.get('/api/demo-items', async (req, res) => {
   if (!IS_STAGING || req.query.demo !== '1') return res.json({ seeded: false });
   try {
-    const uid2 = req.user.id;
-    await pool.query(DEMO_SEED_SQL, [
-      uid2,
-      'https://staging-demo.invalid/' + uid2 + '.xml',
-      'Staging demo feed ' + uid2,
-      'Fake rows seeded for staging previews only',
-      '#0ea5e9',
-      'ok',
-      '',
-      faviconOf('https://staging-demo.invalid'),
-    ]);
-    const feedRow = await pool.query(
-      `SELECT id FROM feeds WHERE user_id = $1 ORDER BY id DESC LIMIT 1`,
-      [uid2]
-    );
-    if (feedRow.rowCount) {
-      await pool.query(
-        `INSERT INTO items (feed_id, user_id, guid, link, title, summary, thumb_url, published, read)
-         SELECT $1, $2, 'staging-demo-user-item-' || n.n, '', 'Staging demo item ' || n.n,
-                '<p>Seeded preview content for the RSS reader. This item is fake and belongs to a demo feed.</p>',
-                CASE WHEN n.n <= 3 THEN $3 ELSE '' END,
-                NOW() - (n.n * interval '1 hour'), n.n >= 5
-         FROM generate_series(1, 6) AS n(n)
-        ON CONFLICT (user_id, guid) DO NOTHING`,
-        [feedRow.rows[0].id, uid2, STAGING_THUMB]
-      );
-      // One read item so the header status line has something to show.
-      await pool.query(
-        `INSERT INTO items (feed_id, user_id, guid, link, title, summary, published, read)
-         SELECT $1, $2, 'staging-demo-user-read-item', '', 'Staging demo read item',
-                '<p>Seeded preview content for the RSS reader. This item is fake and was already read.</p>',
-                NOW() - interval '30 minutes', TRUE
-         ON CONFLICT (user_id, guid) DO NOTHING`,
-        [feedRow.rows[0].id, uid2]
-      );
-    }
+    await seedDemoData(req.user.id);
     return res.json({ seeded: true });
   } catch (err) { return res.status(500).json({ error: err.message }); }
 });

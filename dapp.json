@@ -50,10 +50,20 @@
       ]
     },
     {
+      "id": "rss.item-saved-badge",
+      "name": "Saved badge renders on bookmarked card",
+      "path": "/?demo=1",
+      "expectSelector": "#item-list .item-saved",
+      "impact": [
+        "public/index.html",
+        "server.js"
+      ]
+    },
+    {
       "id": "rss.item-thumb-fallback",
       "name": "Item thumbnail fallback dot renders",
       "path": "/?demo=1",
-      "expectSelector": "#item-list .item-thumb-fallback",
+      "expectSelector": "#item-list .item-feed-dot",
       "visual": true,
       "impact": [
         "public/index.html",
