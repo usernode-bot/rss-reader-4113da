@@ -1,6 +1,6 @@
 {
   "icon": {
-    "emoji": "\ud83d\udcf0"
+    "emoji": "📰"
   },
   "secrets": [],
   "tests": [
@@ -122,6 +122,16 @@
       "impact": [
         "public/index.html",
         "styles/tailwind-input.css",
+        "server.js"
+      ]
+    },
+    {
+      "id": "rss.staging-default-list",
+      "name": "Default staging route shows seeded articles",
+      "path": "/",
+      "expectText": "The quiet return of the personal homepage",
+      "impact": [
+        "public/index.html",
         "server.js"
       ]
     }

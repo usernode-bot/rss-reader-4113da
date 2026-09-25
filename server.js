@@ -163,7 +163,7 @@ const STAGING_DEMO_FEEDS = [
 ];
 
 // Seed the demo corpus for a user id. Boot-time seeding uses the fixed fake
-// staging identity; ?demo=1 request-time seeding uses the calling user's id.
+// staging identity; request-time seeding uses the calling user's id.
 // Idempotent throughout: fixed guids and ON CONFLICT DO NOTHING.
 async function seedDemoData(userId) {
   for (const feed of STAGING_DEMO_FEEDS) {
@@ -190,6 +190,23 @@ async function seedDemoData(userId) {
       );
     }
   }
+}
+
+// Seed the demo corpus for the CALLING user when staging serves a normal
+// list read, so a shell-authenticated preview viewer (whose verified token
+// makes req.user a real id the boot seed never touched) sees the same
+// populated list the tokenless route does. Existence-guarded: one cheap
+// query on every load, full seed only on the user's first request. In
+// production both this and the list routes short-circuit before any SQL.
+async function ensureDemoData(userId) {
+  if (!IS_STAGING || !userId) return;
+  const existing = await pool.query(
+    `SELECT 1 FROM feeds WHERE user_id = $1 LIMIT 1`,
+    [userId]
+  );
+  if (existing.rowCount) return;
+  await seedDemoData(userId);
+  console.log('[staging] seeded demo feeds/items for caller ' + userId);
 }
 
 app.use(express.json({ limit: '256kb' }));
@@ -531,6 +548,7 @@ function normalizeFeedUrl(raw) {
 
 app.get('/api/feeds', async (req, res) => {
   try {
+    await ensureDemoData(req.user.id);
     const { rows } = await pool.query(
       `SELECT f.*,
               (SELECT COUNT(*)::int FROM items i WHERE i.feed_id = f.id AND i.read = FALSE) AS unread
@@ -606,6 +624,7 @@ app.post('/api/feeds/:id/refresh', async (req, res) => {
 
 app.get('/api/items', async (req, res) => {
   try {
+    await ensureDemoData(req.user.id);
     const filter = req.query.filter === 'all' ? 'all' : 'unread';
     const limit = Math.min(parseInt(req.query.limit, 10) || 200, 500);
     const { rows } = await pool.query(
