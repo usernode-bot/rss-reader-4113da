@@ -236,7 +236,6 @@
     <div id="article-scroll" class="flex-1 overflow-y-auto overscroll-contain">
       <div class="max-w-2xl mx-auto px-4 pt-5 pb-24">
         <div class="flex items-center gap-2 text-xs theme-muted mb-2">
-          <span id="article-feed-dot" class="w-2 h-2 rounded-full shrink-0"></span>
           <span id="article-feed-name" class="truncate"></span>
         </div>
         <h1 id="article-title" class="text-2xl font-bold leading-snug theme-heading mb-2"></h1>
@@ -501,7 +500,6 @@
     function openArticle(it) {
       if (!it) return;
       openItemId = it.id;
-      $('article-feed-dot').style.background = it.feed_color || '#268bd2';
       $('article-feed-name').textContent = it.feed_title || '';
       $('article-title').textContent = it.title || 'Untitled';
       var meta = [];
