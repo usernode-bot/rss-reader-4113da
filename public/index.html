@@ -103,7 +103,9 @@
     }
     /* App palette: Solarized, driven by the html.dark class (the
        platform-native kit convention: tokens on :root / .dark, never
-       forked kit CSS). Dark mode is base03-toned, light mode is base3. */
+       forked kit CSS). Light mode is base3; dark mode grounds the whole
+       app in zinc neutrals (zinc-950 page, zinc-900 surfaces) with
+       Solarized accent hues. */
     :root {
       --sol-base03: #002b36;
       --sol-base02: #073642;
@@ -157,12 +159,14 @@
       --un-action-text: var(--sol-base03);
     }
     .dark {
-      --sol-base03: #002b36;
-      --sol-base02: #073642;
-      --sol-base01: #586e75;
-      --sol-base00: #657b83;
-      --sol-base0: #839496;
-      --sol-base1: #93a1a1;
+      /* Dark mode neutral scale: zinc, matching the platform dark
+         chrome. The hue tokens below keep their Solarized values. */
+      --sol-base03: #09090b;
+      --sol-base02: #18181b;
+      --sol-base01: #3f3f46;
+      --sol-base00: #52525b;
+      --sol-base0: #a1a1aa;
+      --sol-base1: #d4d4d8;
       --sol-base2: #eee8d5;
       --sol-base3: #fdf6e3;
       --sol-yellow: #b58900;
@@ -179,30 +183,30 @@
       --heading: var(--sol-base1);
       --muted: var(--sol-base1);
       --faint: var(--sol-base01);
-      --hairline: #0f4450;
+      --hairline: #27272a;
       --accent: var(--sol-blue);
-      --accent-soft: #10414f;
+      --accent-soft: #27272a;
       --on-accent: #ffffff;
-      --warn-bg: #143b44;
+      --warn-bg: #27272a;
       --warn-fg: var(--sol-yellow);
       --error: var(--sol-red);
-      --seg-active-bg: #0f4450;
+      --seg-active-bg: #27272a;
       --seg-active-fg: var(--sol-base1);
       --seg-inactive-fg: var(--sol-base01);
       --ab-body: var(--sol-base0);
       --ab-heading: var(--sol-base1);
       --ab-accent: var(--sol-blue);
       --ab-quote: var(--sol-base1);
-      --ab-quote-border: #155a68;
+      --ab-quote-border: #3f3f46;
       --ab-pre-bg: var(--sol-base02);
-      --item-hover: #0f4450;
-      --item-thumb-ring: #155a68;
+      --item-hover: #18181b;
+      --item-thumb-ring: #3f3f46;
       --un-accent: var(--sol-blue);
       --un-accent-contrast: #ffffff;
       --un-hairline: var(--hairline);
       --un-muted: var(--sol-base1);
-      --un-group-bg: #0a3d49;
-      --un-action-neutral: var(--sol-base01);
+      --un-group-bg: #18181b;
+      --un-action-neutral: #3f3f46;
       --un-action-text: var(--sol-base1);
     }
     .article-body { font-size: 1rem; line-height: 1.7; color: var(--ab-body); overflow-wrap: break-word; }
@@ -714,8 +718,8 @@
     // cold-launch screen.
     function isDark() { return document.documentElement.classList.contains('dark'); }
     function resolvedScheme() { return isDark() ? 'dark' : 'light'; }
-    // Solarized page grounds: base03 in dark mode, base3 in light.
-    function pageGroundHex() { return isDark() ? '#002b36' : '#fdf6e3'; }
+    // Page grounds: zinc-950 in dark mode, Solarized base3 in light.
+    function pageGroundHex() { return isDark() ? '#09090b' : '#fdf6e3'; }
     function hexFromRgb(rgb) {
       const m = /^rgba?\((\d+), (\d+), (\d+)/.exec(rgb || '');
       return m ? '#' + m.slice(1).map(function (n) {
