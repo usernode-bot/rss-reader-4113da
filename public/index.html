@@ -173,7 +173,7 @@
       --sol-blue: #268bd2;
       --sol-cyan: #2aa198;
       --sol-green: #859900;
-      --bg: var(--sol-base03);
+      --bg: #09090b;
       --surface: var(--sol-base02);
       --text: var(--sol-base0);
       --heading: var(--sol-base1);
@@ -714,8 +714,9 @@
     // cold-launch screen.
     function isDark() { return document.documentElement.classList.contains('dark'); }
     function resolvedScheme() { return isDark() ? 'dark' : 'light'; }
-    // Solarized page grounds: base03 in dark mode, base3 in light.
-    function pageGroundHex() { return isDark() ? '#002b36' : '#fdf6e3'; }
+    // Page grounds: zinc-950 in dark mode (closer to the platform's
+    // near-black dark surface), Solarized base3 in light.
+    function pageGroundHex() { return isDark() ? '#09090b' : '#fdf6e3'; }
     function hexFromRgb(rgb) {
       const m = /^rgba?\((\d+), (\d+), (\d+)/.exec(rgb || '');
       return m ? '#' + m.slice(1).map(function (n) {
