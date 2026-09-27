@@ -10,13 +10,15 @@
       <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
-  <rect width="512" height="512" rx="116" fill="url(#glow)"/>
-  <g transform="translate(-9 9)">
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <rect width="512" height="512" fill="url(#glow)"/>
+  <g transform="translate(256 256) scale(0.72) translate(-256 -256)">
+    <g transform="translate(-9 9)">
   <g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-width="52">
-    <path d="M150 238a124 124 0 0 1 124 124"/>
-    <path d="M150 132a230 230 0 0 1 230 230" stroke-opacity="0.92"/>
+      <path d="M150 238a124 124 0 0 1 124 124"/>
+      <path d="M150 132a230 230 0 0 1 230 230" stroke-opacity="0.92"/>
+    </g>
+    <circle cx="162" cy="350" r="38" fill="#FFFFFF"/>
   </g>
-  <circle cx="162" cy="350" r="38" fill="#FFFFFF"/>
   </g>
 </svg>

@@ -1,5 +1,6 @@
 {
   "icon": {
+    "image": "public/icon-512.png",
     "emoji": "📰"
   },
   "secrets": [],
