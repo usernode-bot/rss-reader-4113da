@@ -260,7 +260,7 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-app.get('/favicon.ico', (_req, res) => res.status(204).end());
+app.get('/favicon.ico', (_req, res) => res.redirect(301, '/icon.svg'));
 
 // ---------------------------------------------------------------------------
 // Helpers
