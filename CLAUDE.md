@@ -99,11 +99,36 @@ tables you've marked private), etc.
 
 ## About RSS Reader
 
-_(add a sentence or two of product context here so Claude Code has a
-shared understanding of what this app is for)_
+A single-screen RSS reader: each person adds their own RSS/Atom feeds and
+catches up on their unread posts in one scrolling list. Reading — not feed
+management — is the point: the one primary action is **Add feed**, feed
+management is a quiet collapsible corner of the same screen. Tapping a
+post expands an in-page preview and marks it read; the full article stays
+in the browser.
 
 ## App-specific conventions
 
-_(optional — e.g. "all currency values stored as integer cents, not
-floats"; "the `posts` table is append-only"; "avoid adding new
-dependencies"; etc.)_
+**Design:** teal accent on warm stone-grey neutrals, in a light and a dark
+look that follow the viewer's Homeroom theme via `dark:` variants — no
+theme picker. Accent: `teal-600` light / `teal-400` dark for text, links
+and the unread dot; the filled primary button is `teal-600` with white
+text in both looks. Neutrals: stone (`stone-50`/`stone-900` light,
+`stone-950`/`stone-100` dark). The native UI kit's `--un-*` tokens are
+overridden to the same palette in the `<style>` block in `index.html`.
+Type/spacing: phone-width single column (`max-w-md`), feed names in small
+teal caps (`text-xs uppercase`), `text-sm` body. Signature element: the
+**unread dot** — a small teal dot at the left of every unread post row,
+the only thing that disappears when a post is read.
+
+**Data:** `feeds`, `posts` and `post_reads` are private per-user tables
+(`staging:private`, no staging seed). `posts` is append-only: a refresh
+inserts new guids with `ON CONFLICT DO NOTHING` and never updates stored
+rows. Read state is a `post_reads` row, not a column — there is no
+un-read in v1. Removing a feed cascades to its posts and read marks.
+
+**Feed-content safety:** feed text is third-party input. The server
+strips it to plain text before storing; the frontend renders every
+feed-derived string with `textContent` (never `innerHTML`) and only
+accepts `http(s)` links for the Open original `href`.
+
+**No new npm dependencies** — feed fetching and parsing are built-in code.

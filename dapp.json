@@ -1,3 +1,19 @@
 {
-  "secrets": []
+  "secrets": [],
+  "tests": [
+    {
+      "name": "No-feeds empty state renders",
+      "path": "/",
+      "expectText": "No feeds yet"
+    },
+    {
+      "id": "reader.screen-load",
+      "name": "Reader screen renders",
+      "path": "/",
+      "expectSelector": "#post-list",
+      "expectText": "Add feed",
+      "visual": true,
+      "impact": ["public/**", "server.js"]
+    }
+  ]
 }

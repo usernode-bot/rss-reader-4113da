@@ -1,28 +1,37 @@
 # RSS Reader
 
-> **Starter template** — this repo was scaffolded by Homeroom Social
-> Vibecoding. Everything in it is placeholder example code until the
-> app's first real feature is built.
+A single-screen RSS reader built on Homeroom. You are signed in through
+Homeroom automatically — each person's feeds, posts and read state are
+their own.
 
-The scaffold is a small working demo that proves the plumbing works:
+## What it does
 
-- **Sign-in** — the server verifies the platform-issued user token
-  (an RS256 JWT) on every request, so the app already knows who is
-  using it. No accounts to build.
-- **Database** — the app has its own private Postgres database; the
-  demo stores button presses in a `presses` table.
-- **Live API** — two example routes (`/api/press`,
-  `/api/leaderboard`) read and write through a real Express server.
-- **Styling** — Tailwind CSS, precompiled by `npm run build` during
-  image creation with either Kubernetes/Paketo or standalone Docker, in a
-  light and a dark look that follow the viewer's Homeroom theme.
+- **Add feed** — paste an `https://` RSS or Atom feed URL. The server
+  fetches it right away to validate it, saves it under your account, and
+  backfills its recent posts. Re-adding a URL you already follow doesn't
+  create a duplicate.
+- **Unread list** — one scrolling list of unread posts across all your
+  feeds, newest first. Each row shows a teal unread dot, the feed name and
+  the post's date. At most the newest 200 unread posts are shown.
+- **Preview** — tap a row to expand a plain-text preview of the post with
+  an **Open original** link. Opening the preview marks the post read; read
+  posts leave the list on the next load (there is no un-read in v1).
+- **Feeds line** — a collapsed-by-default list of your feeds with an **×**
+  to remove each one (its stored posts and read marks go with it).
+- **Refresh** — feeds are fetched when the list is opened; there is no
+  background refresh job in v1. A feed that fails to refresh is skipped
+  silently — its already-fetched posts still show.
 
-## Replacing the template
+## How it's built
 
-Open the app on Homeroom, tap the Homeroom icon in the header, choose
-**Start a new change**, and describe the app you want in plain English.
-The template will be replaced with your real app. You can also run
-Claude Code against this repo directly; start with `CLAUDE.md`, which
-carries the app-specific notes and points at the platform rules.
-
-Once the real app exists, rewrite this README to describe it.
+- Node/Express server (`server.js`) with its own Postgres database. Three
+  private per-user tables: `feeds`, `posts` (append-only, deduped by feed
+  guid) and `post_reads`.
+- Feeds are fetched over HTTPS on demand with a 10s timeout and a ~2 MB
+  cap and parsed with built-in code — no RSS library. Only public
+  addresses are fetched (loopback/private ranges are refused).
+- Feed text is third-party input: stripped to plain text server-side and
+  rendered with `textContent` in the frontend.
+- Tailwind CSS precompiled by `npm run build` during image creation, in a
+  light and a dark look that follow the viewer's Homeroom theme. Teal
+  accent on warm stone neutrals; see `CLAUDE.md` for the design note.

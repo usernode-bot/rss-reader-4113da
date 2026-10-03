@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+
   <script>
   // usernode-dev-console@1
   (function () {
@@ -27,7 +27,7 @@
             seen.add(val);
           }
           if (typeof val === 'function') return '[Function ' + (val.name || 'anonymous') + ']';
-          if (val instanceof Error) return val.stack || (val.name + ': ' + val.message);
+          if (val instanceof Error) return val.stack || val.message;
           return val;
         });
       } catch (e) { try { return String(v); } catch (_) { return '[unserializable]'; } }
@@ -64,7 +64,7 @@
   })();
   </script>
   <title>RSS Reader</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%237c3aed'/><circle cx='50' cy='50' r='18' fill='white'/></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230d9488'/><circle cx='50' cy='50' r='18' fill='white'/></svg>">
   <!-- Tailwind, PRECOMPILED for this app (was cdn.tailwindcss.com's
        in-browser engine plus an inline tailwind.config here). The config
        moved to tailwind.config.js in the repo root; npm run build compiles
@@ -78,6 +78,12 @@
        classes, swap this link for the platform-hosted engine instead:
        <script src="/usernode-tailwind/v1/tailwind.js"></script> -->
   <link rel="stylesheet" href="/tailwind.css">
+  <!-- The platform's native-feel UI kit (inset-grouped lists, pressed
+       states, toasts, …), centrally hosted and loaded by RELATIVE path like
+       the bridge — never vendored. The <style> block further down re-themes
+       its --un-* tokens to this app's stone/teal palette. -->
+  <link rel="stylesheet" href="/usernode-native/v1/native.css">
+  <script src="/usernode-native/v1/native.js"></script>
   <!-- The platform bridge, centrally hosted and loaded by RELATIVE path (the
        handler in server.js serves it under a plain "node server.js"; the
        platform's edge answers it everywhere else). Never vendor it and never
@@ -106,104 +112,424 @@
       media.addEventListener('change', applyTheme);
     })();
   </script>
+  <style>
+    /* Re-theme the native UI kit to this app's palette — teal accent on
+         warm stone neutrals — by overriding its --un-* tokens (the kit's
+         theming contract), not its selectors. Same colours the Tailwind
+         classes below use: teal-600 light / teal-400 dark for the accent,
+         stone for the neutrals. */
+    :root {
+      --un-accent: #0d9488;
+      --un-accent-contrast: #ffffff;
+      --un-surface: #fafaf9;
+      --un-group-bg: #ffffff;
+      --un-hairline: rgba(87, 83, 78, 0.25);
+      --un-muted: rgba(68, 64, 60, 0.6);
+      --un-sheet-bg: #f5f5f4;
+      --un-navbar-bg: rgba(250, 250, 249, 0.82);
+      --un-toast-action: #0d9488;
+    }
+    .dark {
+      --un-accent: #2dd4bf;
+      --un-accent-contrast: #042f2e;
+      --un-surface: #1c1917;
+      --un-group-bg: #292524;
+      --un-hairline: rgba(168, 162, 158, 0.35);
+      --un-muted: rgba(231, 229, 228, 0.6);
+      --un-sheet-bg: #1c1917;
+      --un-navbar-bg: rgba(28, 25, 23, 0.78);
+      --un-toast-action: #2dd4bf;
+    }
+    /* The add-feed form sliding in beneath the header — the one animation,
+         and it respects prefers-reduced-motion. */
+    @keyframes feed-form-in {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: none; }
+    }
+    .form-in { animation: feed-form-in 200ms var(--un-ease-spring, ease-out) both; }
+    @media (prefers-reduced-motion: reduce) {
+      .form-in { animation: none; }
+    }
+  </style>
 </head>
-<body class="bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 min-h-screen">
-  <main class="max-w-md mx-auto px-4 py-10 flex flex-col gap-6">
+<body class="bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-100 min-h-screen">
+  <main class="max-w-md mx-auto px-4 pb-16">
 
-    <!-- usernode-starter-notice@1 — starter-template messaging. When building
-         the user's real app, replace this whole screen and delete this block,
-         both sentinel comments included. -->
-    <section class="rounded-2xl border border-violet-500/30 bg-gradient-to-b from-violet-600/10 dark:from-violet-600/20 to-transparent p-6 text-center flex flex-col items-center gap-3">
-      <span class="inline-block rounded-full bg-violet-600/10 text-violet-700 dark:bg-violet-600/20 dark:text-violet-300 text-xs font-semibold uppercase tracking-wide px-3 py-1">Starter template</span>
-      <h1 class="text-2xl font-bold">RSS Reader</h1>
-      <p class="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">Welcome to your new app! Everything on this screen is placeholder content that came with it.</p>
-      <p class="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">Tap the <strong class="text-violet-700 dark:text-violet-300 font-semibold">Homeroom icon</strong> in the header and choose <strong class="text-violet-700 dark:text-violet-300 font-semibold">Start a new change</strong> to start building your app. Describe what you'd like in plain English, and it will be turned into your real app.</p>
-    </section>
-
-    <section>
-      <h2 class="text-sm font-medium text-zinc-500 mb-2 px-1">What's already working</h2>
-      <div class="rounded-xl border border-zinc-200 bg-white divide-y divide-zinc-200 dark:border-zinc-800 dark:bg-zinc-900/60 dark:divide-zinc-800">
-        <div class="flex items-start gap-3 p-4">
-          <svg class="w-5 h-5 text-violet-600 dark:text-violet-400 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7 7a1 1 0 0 1-1.4 0l-3-3a1 1 0 1 1 1.4-1.4L9 11.6l6.3-6.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
-          <div>
-            <p class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Sign-in</p>
-            <p class="text-sm text-zinc-600 dark:text-zinc-400">You're signed in through Homeroom automatically — no accounts to build.</p>
-          </div>
-        </div>
-        <div class="flex items-start gap-3 p-4">
-          <svg class="w-5 h-5 text-violet-600 dark:text-violet-400 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7 7a1 1 0 0 1-1.4 0l-3-3a1 1 0 1 1 1.4-1.4L9 11.6l6.3-6.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
-          <div>
-            <p class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Database</p>
-            <p class="text-sm text-zinc-600 dark:text-zinc-400">Your app has its own private database, ready to store things.</p>
-          </div>
-        </div>
-        <div class="flex items-start gap-3 p-4">
-          <svg class="w-5 h-5 text-violet-600 dark:text-violet-400 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7 7a1 1 0 0 1-1.4 0l-3-3a1 1 0 1 1 1.4-1.4L9 11.6l6.3-6.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
-          <div>
-            <p class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Live API</p>
-            <p class="text-sm text-zinc-600 dark:text-zinc-400">The example below talks to a real server — try it.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-    <!-- /usernode-starter-notice@1 -->
-
-    <section class="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/60 p-5 flex flex-col items-center gap-5">
-      <div class="w-full flex items-baseline justify-between gap-2">
-        <h2 class="text-sm font-medium text-zinc-500">Try the example</h2>
-        <span class="text-xs text-zinc-500 dark:text-zinc-600">This example will be replaced</span>
-      </div>
-
-      <button id="press-btn" class="w-32 h-32 rounded-full bg-violet-600 hover:bg-violet-500 active:scale-95 transition-all text-white text-xl font-bold shadow-lg shadow-violet-600/30">
-        Press!
+    <!-- Slim header: the app name and the one primary action. -->
+    <header class="sticky top-0 z-10 -mx-4 px-4 pt-4 pb-3 bg-stone-50/90 dark:bg-stone-950/90 backdrop-blur flex items-center justify-between gap-3">
+      <h1 class="text-lg font-bold tracking-tight">RSS Reader</h1>
+      <button id="add-feed-btn" type="button" aria-expanded="false" aria-controls="add-feed-form"
+        class="rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold px-3.5 py-2 shadow-sm
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-stone-950">
+        Add feed
       </button>
+    </header>
 
-      <div id="count" class="text-lg text-zinc-600 dark:text-zinc-400">0 total presses</div>
-
-      <div class="w-full max-w-sm">
-        <h3 class="text-sm font-medium text-zinc-500 mb-2 text-center">Leaderboard</h3>
-        <div id="leaderboard" class="space-y-1"></div>
-      </div>
+    <!-- Add-feed form, toggled open from the header button. -->
+    <section id="add-feed-form" class="hidden" aria-label="Add feed">
+      <form id="add-form" class="rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/60 p-4 flex flex-col gap-3 shadow-sm">
+        <label class="block">
+          <span class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Feed URL</span>
+          <input id="feed-url" name="url" type="url" inputmode="url" autocomplete="off" spellcheck="false"
+            placeholder="https://example.com/feed.xml"
+            class="w-full rounded-lg border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-950 px-3 py-2 text-sm
+                   placeholder:text-stone-400 dark:placeholder:text-stone-600
+                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:border-teal-500" />
+        </label>
+        <p id="add-error" class="hidden text-sm text-red-600 dark:text-red-400" role="alert"></p>
+        <div class="flex justify-end gap-2">
+          <button id="add-cancel" type="button"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800
+                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500">
+            Cancel
+          </button>
+          <button id="add-submit" type="submit"
+            class="rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold px-4 py-2
+                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-stone-950">
+            Add
+          </button>
+        </div>
+      </form>
     </section>
 
-    <p class="text-center text-xs text-zinc-500 dark:text-zinc-600">Built on Homeroom — this template screen disappears once you build your real app.</p>
+    <!-- The quiet Feeds line: a collapsible list of the user's feeds with
+         an × to remove each. Never a competing surface — collapsed by default. -->
+    <section class="mt-4" aria-label="Your feeds">
+      <button id="feeds-toggle" type="button" aria-expanded="false" aria-controls="feeds-list"
+        class="flex items-center gap-1 text-sm font-medium text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 py-1
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 rounded-md">
+        <svg id="feeds-chevron" class="w-3.5 h-3.5 transition-transform" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.3 4.7a1 1 0 0 1 1.4 0l4 4a1 1 0 0 1 0 1.4l-4 4a1 1 0 1 1-1.4-1.4L10.6 9 7.3 5.7a1 1 0 0 1 0-1.4Z" clip-rule="evenodd"/></svg>
+        Feeds · <span id="feeds-count">0</span>
+      </button>
+      <ul id="feeds-list" class="hidden mt-1 flex flex-col"></ul>
+    </section>
+
+    <!-- The unread list: newest first, one teal unread dot per row. -->
+    <section class="mt-1" aria-label="Unread posts">
+      <div id="status" class="hidden px-1 py-12 text-center">
+        <p id="status-text" class="text-sm text-stone-500 dark:text-stone-400"></p>
+        <button id="status-add" type="button"
+          class="hidden mt-3 text-sm font-semibold text-teal-700 dark:text-teal-400 hover:underline
+                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 rounded">
+          Add feed
+        </button>
+        <button id="status-retry" type="button"
+          class="hidden mt-3 mx-auto block rounded-lg border border-stone-300 dark:border-stone-700 px-3 py-1.5 text-sm font-medium hover:bg-stone-100 dark:hover:bg-stone-800
+                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500">
+          Try again
+        </button>
+      </div>
+      <div id="post-list" class="un-group" aria-live="polite"></div>
+    </section>
   </main>
 
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token') || '';
-    const headers = token ? { 'x-usernode-token': token } : {};
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token') || '';
 
-    async function loadLeaderboard() {
-      const res = await fetch('/api/leaderboard', { headers });
-      if (!res.ok) return;
-      const { leaderboard } = await res.json();
-      const el = document.getElementById('leaderboard');
-      if (!leaderboard.length) {
-        el.innerHTML = '<p class="text-center text-zinc-500 dark:text-zinc-600 text-sm">No presses yet</p>';
-        return;
+      function reqHeaders(withJson) {
+        const h = {};
+        if (token) h['x-usernode-token'] = token;
+        if (withJson) h['Content-Type'] = 'application/json';
+        return h;
       }
-      el.innerHTML = leaderboard.map((r, i) =>
-        '<div class="flex justify-between px-3 py-1 rounded ' + (i === 0 ? 'bg-violet-600/10 text-violet-700 dark:bg-violet-600/20 dark:text-violet-300' : 'text-zinc-600 dark:text-zinc-400') + '">' +
-        '<span>' + (i + 1) + '. ' + r.username + '</span>' +
-        '<span class="font-mono">' + r.presses + '</span></div>'
-      ).join('');
-      const total = leaderboard.reduce((s, r) => s + parseInt(r.presses), 0);
-      document.getElementById('count').textContent = total + ' total presses';
-    }
 
-    document.getElementById('press-btn').addEventListener('click', async () => {
-      try {
-        const res = await fetch('/api/press', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...headers },
+      async function api(path, opts) {
+        opts = opts || {};
+        let res;
+        try {
+          res = await fetch(path, {
+            method: opts.method || 'GET',
+            headers: reqHeaders(!!opts.body),
+            body: opts.body || undefined,
+          });
+        } catch {
+          const err = new TypeError('network');
+          throw err;
+        }
+        if (res.status === 401) {
+          const err = new Error('Open this app inside Homeroom to use it.');
+          err.auth = true;
+          throw err;
+        }
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const err = new Error(body.error || 'Something went wrong. Try again.');
+          err.status = res.status;
+          throw err;
+        }
+        return body;
+      }
+
+      const $ = (id) => document.getElementById(id);
+      const addFeedBtn = $('add-feed-btn');
+      const addFeedForm = $('add-feed-form');
+      const addFormEl = $('add-form');
+      const feedUrlInput = $('feed-url');
+      const addError = $('add-error');
+      const addSubmit = $('add-submit');
+      const addCancel = $('add-cancel');
+      const feedsToggle = $('feeds-toggle');
+      const feedsChevron = $('feeds-chevron');
+      const feedsCount = $('feeds-count');
+      const feedsList = $('feeds-list');
+      const statusBox = $('status');
+      const statusText = $('status-text');
+      const statusAdd = $('status-add');
+      const statusRetry = $('status-retry');
+      const postList = $('post-list');
+
+      let feedCount = 0;
+
+      // ── Status / empty states ─────────────────────────────────────────
+
+      function showStatus(text, opts) {
+        opts = opts || {};
+        statusBox.classList.remove('hidden');
+        postList.classList.add('hidden');
+        statusText.textContent = text;
+        statusAdd.classList.toggle('hidden', !opts.withAdd);
+        statusRetry.classList.toggle('hidden', !opts.withRetry);
+      }
+
+      function hideStatus() {
+        statusBox.classList.add('hidden');
+        postList.classList.remove('hidden');
+      }
+
+      // ── Words and helpers ─────────────────────────────────────────────
+
+      // Feed text is third-party input: every feed-derived string is set
+      // with textContent, never innerHTML. Outbound links must be http(s).
+      function safeLink(url) {
+        return typeof url === 'string' && /^https?:\/\//i.test(url) ? url : null;
+      }
+
+      // Relative time for recent posts, a plain date for older ones.
+      function relativeDate(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return '';
+        const diff = Date.now() - d.getTime();
+        const min = 60000;
+        const hour = 3600000;
+        const day = 86400000;
+        if (diff < min) return 'just now';
+        if (diff < hour) return Math.round(diff / min) + 'm ago';
+        if (diff < day) return Math.round(diff / hour) + 'h ago';
+        if (diff < 7 * day) return Math.round(diff / day) + 'd ago';
+        const opts = { month: 'short', day: 'numeric' };
+        if (d.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric';
+        return d.toLocaleDateString(undefined, opts);
+      }
+
+      function toast(message) {
+        if (window.unNative && unNative.toast) unNative.toast(message);
+      }
+
+      // ── Add-feed form ─────────────────────────────────────────────────
+
+      function openForm() {
+        addFeedForm.classList.remove('hidden');
+        addFeedForm.classList.add('form-in');
+        addFeedBtn.setAttribute('aria-expanded', 'true');
+        feedUrlInput.focus();
+      }
+
+      function closeForm() {
+        addFeedForm.classList.add('hidden');
+        addError.classList.add('hidden');
+        addFeedBtn.setAttribute('aria-expanded', 'false');
+      }
+
+      addFeedBtn.addEventListener('click', () => {
+        if (addFeedForm.classList.contains('hidden')) openForm();
+        else closeForm();
+      });
+      statusAdd.addEventListener('click', openForm);
+      addCancel.addEventListener('click', closeForm);
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !addFeedForm.classList.contains('hidden')) closeForm();
+      });
+
+      addFormEl.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const url = feedUrlInput.value.trim();
+        if (!url) return;
+        addError.classList.add('hidden');
+        addSubmit.disabled = true;
+        addSubmit.textContent = 'Adding…';
+        try {
+          await api('/api/feeds', { method: 'POST', body: JSON.stringify({ url }) });
+          feedUrlInput.value = '';
+          closeForm();
+          await refreshAll();
+        } catch (err) {
+          addError.textContent = err instanceof TypeError
+            ? 'Could not reach the server. Try again.'
+            : (err.message || 'Could not add that feed.');
+          addError.classList.remove('hidden');
+        } finally {
+          addSubmit.disabled = false;
+          addSubmit.textContent = 'Add';
+        }
+      });
+
+      // ── Feeds line ────────────────────────────────────────────────────
+
+      feedsToggle.addEventListener('click', () => {
+        const open = feedsList.classList.toggle('hidden') === false;
+        feedsToggle.setAttribute('aria-expanded', String(open));
+        feedsChevron.classList.toggle('rotate-90', open);
+      });
+
+      function buildFeedItem(feed) {
+        const li = document.createElement('li');
+        li.className = 'flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-sm hover:bg-stone-100 dark:hover:bg-stone-800';
+
+        const name = document.createElement('span');
+        name.className = 'min-w-0 truncate';
+        name.textContent = feed.title;
+
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'shrink-0 w-6 h-6 -mr-1 rounded-full flex items-center justify-center text-stone-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-stone-200 dark:hover:bg-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500';
+        del.setAttribute('aria-label', 'Remove ' + feed.title);
+        del.textContent = '×';
+        del.addEventListener('click', async () => {
+          del.disabled = true;
+          try {
+            await api('/api/feeds/' + feed.id, { method: 'DELETE' });
+            await refreshAll();
+          } catch (err) {
+            del.disabled = false;
+            if (!(err instanceof TypeError) && !err.auth) toast('Could not remove that feed. Try again.');
+          }
         });
-        if (res.ok) loadLeaderboard();
-        else if (res.status === 401) document.getElementById('count').textContent = 'Sign in to press!';
-      } catch {}
-    });
 
-    loadLeaderboard();
+        li.appendChild(name);
+        li.appendChild(del);
+        return li;
+      }
+
+      async function loadFeeds() {
+        const { feeds } = await api('/api/feeds');
+        feedCount = feeds.length;
+        feedsCount.textContent = feeds.length;
+        feedsList.textContent = '';
+        for (const feed of feeds) feedsList.appendChild(buildFeedItem(feed));
+      }
+
+      // ── Unread post list ──────────────────────────────────────────────
+
+      function buildPostRow(post) {
+        const row = document.createElement('div');
+        row.className = 'un-group-row';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.setAttribute('aria-expanded', 'false');
+        btn.className = 'w-full text-left px-4 py-3 flex gap-3 items-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500';
+
+        // The signature element: the teal unread dot. The only thing that
+        // disappears once a post is read.
+        const dot = document.createElement('span');
+        dot.className = 'shrink-0 w-2 h-2 rounded-full bg-teal-600 dark:bg-teal-400 mt-1.5';
+
+        const body = document.createElement('span');
+        body.className = 'flex-1 min-w-0';
+
+        const meta = document.createElement('span');
+        meta.className = 'flex items-baseline justify-between gap-2';
+
+        const feedName = document.createElement('span');
+        feedName.className = 'text-xs font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-400 truncate';
+        feedName.textContent = post.feed_title;
+
+        const date = document.createElement('span');
+        date.className = 'shrink-0 text-xs text-stone-500 dark:text-stone-400';
+        date.textContent = relativeDate(post.published_at);
+
+        const titleEl = document.createElement('span');
+        titleEl.className = 'block mt-1 font-semibold leading-snug line-clamp-2';
+        titleEl.textContent = post.title || '(untitled post)';
+
+        // The preview: expands in place under the tapped row.
+        const preview = document.createElement('div');
+        preview.className = 'hidden px-4 pb-4';
+        const summary = document.createElement('p');
+        summary.className = 'text-sm text-stone-600 dark:text-stone-300 leading-relaxed whitespace-pre-line';
+        summary.textContent = post.summary || 'No preview text available for this post.';
+        preview.appendChild(summary);
+        const link = safeLink(post.url);
+        if (link) {
+          const a = document.createElement('a');
+          a.href = link;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.textContent = 'Open original';
+          a.className = 'inline-block mt-3 text-sm font-semibold text-teal-700 dark:text-teal-400 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 rounded';
+          preview.appendChild(a);
+        }
+
+        meta.appendChild(feedName);
+        meta.appendChild(date);
+        body.appendChild(meta);
+        body.appendChild(titleEl);
+        btn.appendChild(dot);
+        btn.appendChild(body);
+        row.appendChild(btn);
+        row.appendChild(preview);
+
+        btn.addEventListener('click', () => {
+          const open = preview.classList.toggle('hidden') === false;
+          btn.setAttribute('aria-expanded', String(open));
+          titleEl.classList.toggle('line-clamp-2', !open);
+          titleEl.classList.toggle('line-clamp-none', open);
+          // Opening the preview marks the post read: its dot goes away and
+          // it leaves the list the next time the list loads.
+          if (open && dot.parentNode) {
+            api('/api/posts/' + post.id + '/read', { method: 'POST' })
+              .then(() => dot.remove())
+              .catch(() => {});
+          }
+        });
+
+        return row;
+      }
+
+      function renderPosts(posts) {
+        if (feedCount === 0) {
+          showStatus('No feeds yet — add your first feed to start reading', { withAdd: true });
+          return;
+        }
+        if (!posts.length) {
+          showStatus("You're all caught up.", {});
+          return;
+        }
+        hideStatus();
+        postList.textContent = '';
+        for (const post of posts) postList.appendChild(buildPostRow(post));
+      }
+
+      async function refreshAll() {
+        showStatus('Loading…', {});
+        try {
+          const [postData] = await Promise.all([api('/api/posts'), loadFeeds()]);
+          renderPosts(postData.posts);
+        } catch (err) {
+          if (err instanceof TypeError) {
+            showStatus("Couldn't load your posts. Check your connection and try again.", { withRetry: true });
+          } else {
+            showStatus(err.message, {});
+          }
+        }
+      }
+
+      statusRetry.addEventListener('click', refreshAll);
+      refreshAll();
+    })();
   </script>
 </body>
 </html>
