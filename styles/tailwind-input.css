@@ -36,9 +36,10 @@
   .add-feed-input:focus { box-shadow: inset 0 0 0 2px var(--accent); }
 
   /* Article list cards. The card itself is what you tap, so it gets the
-     Solarized surface tint, a hover state on pointer devices, a visible
-     focus ring, and a per-state treatment (read rows dim to faint, saved
-     rows carry the same amber badge the error badge uses). */
+     app surface tint (light: Solarized cream-family, dark: neutral zinc),
+     a hover state on pointer devices, a visible focus ring, and a
+     per-state treatment (read rows dim to faint, saved rows carry the
+     same amber badge the error badge uses). */
   .item-card {
     display: flex;
     align-items: flex-start;
