@@ -103,7 +103,8 @@
     }
     /* App palette: Solarized, driven by the html.dark class (the
        platform-native kit convention: tokens on :root / .dark, never
-       forked kit CSS). Dark mode is base03-toned, light mode is base3. */
+       forked kit CSS). Dark mode uses the platform's near-black zinc
+       grounds and surfaces with Solarized accents; light mode is base3. */
     :root {
       --sol-base03: #002b36;
       --sol-base02: #073642;
@@ -173,35 +174,35 @@
       --sol-blue: #268bd2;
       --sol-cyan: #2aa198;
       --sol-green: #859900;
-      --bg: var(--sol-base03);
-      --surface: var(--sol-base02);
+      --bg: #09090b;
+      --surface: #18181b;
       --text: var(--sol-base0);
       --heading: var(--sol-base1);
       --muted: var(--sol-base1);
       --faint: var(--sol-base01);
-      --hairline: #0f4450;
+      --hairline: #27272a;
       --accent: var(--sol-blue);
-      --accent-soft: #10414f;
+      --accent-soft: #27272a;
       --on-accent: #ffffff;
-      --warn-bg: #143b44;
+      --warn-bg: #27272a;
       --warn-fg: var(--sol-yellow);
       --error: var(--sol-red);
-      --seg-active-bg: #0f4450;
+      --seg-active-bg: #27272a;
       --seg-active-fg: var(--sol-base1);
       --seg-inactive-fg: var(--sol-base01);
       --ab-body: var(--sol-base0);
       --ab-heading: var(--sol-base1);
       --ab-accent: var(--sol-blue);
       --ab-quote: var(--sol-base1);
-      --ab-quote-border: #155a68;
-      --ab-pre-bg: var(--sol-base02);
-      --item-hover: #0f4450;
-      --item-thumb-ring: #155a68;
+      --ab-quote-border: #3f3f46;
+      --ab-pre-bg: #18181b;
+      --item-hover: #27272a;
+      --item-thumb-ring: #3f3f46;
       --un-accent: var(--sol-blue);
       --un-accent-contrast: #ffffff;
       --un-hairline: var(--hairline);
       --un-muted: var(--sol-base1);
-      --un-group-bg: #0a3d49;
+      --un-group-bg: #18181b;
       --un-action-neutral: var(--sol-base01);
       --un-action-text: var(--sol-base1);
     }
@@ -714,8 +715,8 @@
     // cold-launch screen.
     function isDark() { return document.documentElement.classList.contains('dark'); }
     function resolvedScheme() { return isDark() ? 'dark' : 'light'; }
-    // Solarized page grounds: base03 in dark mode, base3 in light.
-    function pageGroundHex() { return isDark() ? '#002b36' : '#fdf6e3'; }
+    // Page grounds: near-black zinc in dark mode, Solarized base3 in light.
+    function pageGroundHex() { return isDark() ? '#09090b' : '#fdf6e3'; }
     function hexFromRgb(rgb) {
       const m = /^rgba?\((\d+), (\d+), (\d+)/.exec(rgb || '');
       return m ? '#' + m.slice(1).map(function (n) {

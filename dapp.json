@@ -116,7 +116,7 @@
     },
     {
       "id": "rss.theme.dark-override",
-      "name": "Solarized dark when the platform theme is dark",
+      "name": "Near-black dark ground when the platform theme is dark",
       "path": "/?demo=1&theme=dark",
       "expectSelector": "html[data-theme='dark']",
       "impact": [
