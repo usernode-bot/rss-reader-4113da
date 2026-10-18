@@ -116,13 +116,22 @@
     },
     {
       "id": "rss.theme.dark-override",
-      "name": "Solarized dark when the platform theme is dark",
+      "name": "Zinc-950 dark when the platform theme is dark",
       "path": "/?demo=1&theme=dark",
       "expectSelector": "html[data-theme='dark']",
       "impact": [
         "public/index.html",
         "styles/tailwind-input.css",
         "server.js"
+      ]
+    },
+    {
+      "id": "rss.theme.dark-ground",
+      "name": "Dark mode reports the zinc-950 page ground",
+      "path": "/?demo=1&theme=dark",
+      "expectSelector": "meta[name=\"theme-color\"][content=\"#09090b\"]",
+      "impact": [
+        "public/index.html"
       ]
     },
     {
