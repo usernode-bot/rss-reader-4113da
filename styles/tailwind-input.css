@@ -36,7 +36,7 @@
   .add-feed-input:focus { box-shadow: inset 0 0 0 2px var(--accent); }
 
   /* Article list cards. The card itself is what you tap, so it gets the
-     Solarized surface tint, a hover state on pointer devices, a visible
+     themed surface tint, a hover state on pointer devices, a visible
      focus ring, and a per-state treatment (read rows dim to faint, saved
      rows carry the same amber badge the error badge uses). */
   .item-card {
@@ -55,7 +55,7 @@
     outline-offset: -2px;
     border-radius: 0.75rem;
   }
-  /* The swipe tray under the translating row reads as a Solarized chip:
+  /* The swipe tray under the translating row reads as a themed chip:
      the row itself carries the surface tint, the tray behind it uses
      --item-hover. */
   .un-swipe,
