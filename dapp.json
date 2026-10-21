@@ -126,6 +126,18 @@
       ]
     },
     {
+      "id": "rss.theme.dark-article-view",
+      "name": "Article preview uses the zinc dark palette",
+      "path": "/?demo=article&theme=dark",
+      "expectSelector": "#article-view",
+      "visual": true,
+      "impact": [
+        "public/index.html",
+        "styles/tailwind-input.css",
+        "server.js"
+      ]
+    },
+    {
       "id": "rss.staging-default-list",
       "name": "Default staging route shows seeded articles",
       "path": "/",
